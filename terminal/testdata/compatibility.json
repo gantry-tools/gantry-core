@@ -1,0 +1,4 @@
+[
+ {"name":"defaults","input":{"id":"term-1","cwd":"/tmp"},"wantTitle":"Terminal","wantState":"disconnected"},
+ {"name":"preserves","input":{"id":"term_2","title":"Build","cwd":"/work","state":"connected"},"wantTitle":"Build","wantState":"connected"}
+]

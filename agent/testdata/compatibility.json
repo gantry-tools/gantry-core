@@ -1,0 +1,9 @@
+[
+  {"name":"clean completion","snapshot":{},"stdoutError":false,"validStop":true,"exit":{"exited":true,"exitCode":0},"want":"completed"},
+  {"name":"process error after completion","snapshot":{},"stdoutError":false,"validStop":true,"exit":{"exited":true,"exitCode":1},"want":"completed_with_process_error"},
+  {"name":"error before stop","snapshot":{"errorSequence":1,"stopSequence":2},"stdoutError":true,"validStop":true,"exit":{"exited":true},"want":"failed"},
+  {"name":"user stop","snapshot":{"cause":"user_stop"},"stdoutError":false,"validStop":false,"exit":{"signaled":true,"signal":"SIGKILL"},"want":"cancelled"},
+  {"name":"output limit","snapshot":{"cause":"output_limit"},"stdoutError":false,"validStop":false,"exit":{"signaled":true},"want":"truncated"},
+  {"name":"service shutdown","snapshot":{"cause":"service_shutdown"},"stdoutError":false,"validStop":false,"exit":{"signaled":true},"want":"interrupted"},
+  {"name":"clean exit without stop","snapshot":{},"stdoutError":false,"validStop":false,"exit":{"exited":true},"want":"failed"}
+]

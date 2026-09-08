@@ -1,0 +1,5 @@
+[
+ {"name":"literal punctuation","content":"a+b A+B","query":{"pattern":"a+b","caseSensitive":true},"replacement":"x","want":"x A+B","count":1},
+ {"name":"case insensitive","content":"Alpha alpha","query":{"pattern":"alpha","caseSensitive":false},"replacement":"z","want":"z z","count":2},
+ {"name":"regex groups","content":"item-12 item-9","query":{"pattern":"item-([0-9]+)","regex":true,"caseSensitive":true},"replacement":"row-$1","want":"row-12 row-9","count":2}
+]

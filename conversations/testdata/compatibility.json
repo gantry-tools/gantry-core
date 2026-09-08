@@ -1,0 +1,21 @@
+{
+  "server":[
+    {"kind":"user","text":"same","createdAt":10},
+    {"kind":"assistant","text":"world","createdAt":20,"runId":"r1"},
+    {"kind":"done","text":"Done","name":"run:r1:completed","createdAt":30},
+    {"kind":"assistant","text":"hello world","name":"repl:r1","createdAt":40},
+    {"kind":"error","text":"Storage failure","name":"run:r1:failed","createdAt":50}
+  ],
+  "client":[
+    {"kind":"user","text":"same","createdAt":10},
+    {"kind":"user","text":"same","createdAt":11},
+    {"kind":"assistant","text":"another run","createdAt":25,"runId":"r2"}
+  ],
+  "want":[
+    {"kind":"user","text":"same","createdAt":10},
+    {"kind":"user","text":"same","createdAt":11},
+    {"kind":"assistant","text":"another run","createdAt":25,"runId":"r2"},
+    {"kind":"assistant","text":"hello world","name":"repl:r1","createdAt":40},
+    {"kind":"error","text":"Storage failure","name":"run:r1:failed","createdAt":50}
+  ]
+}

@@ -1,0 +1,7 @@
+[
+ {"path":"","status":"available"},
+ {"path":"existing","status":"available"},
+ {"path":"missing","status":"missing"},
+ {"path":"../outside","status":"outside-root"},
+ {"path":"escape","status":"symlink-escape"}
+]

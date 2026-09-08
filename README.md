@@ -30,4 +30,4 @@ trees, run the contracts and both consumer suites together with:
 script intentionally tests both consumers against this checkout through their
 local module replacements, so one change exercises the complete dogfood set.
 
-Consumers use normal Go imports such as `github.com/gantry-dev/gantry-core/conversations`. The sibling Cortex and Warden repositories use a local `replace` while this extraction is dogfooded.
+Consumers use normal Go imports such as `github.com/gantry-tools/gantry-core/conversations`. Cortex and Warden pin an exact Gantry Core revision so their builds remain reproducible from standalone clones.

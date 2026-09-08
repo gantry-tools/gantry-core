@@ -1,3 +1,3 @@
-module github.com/gantry-dev/gantry-core
+module github.com/gantry-tools/gantry-core
 
 go 1.22.0

@@ -1,11 +1,9 @@
-# Dogfood adoption
+# Consumer adoption
 
-Cortex and Warden consume this checkout with a local Go module replacement:
+Cortex and Warden consume a pinned revision of the canonical Go module:
 
 ```go
-require github.com/gantry-dev/gantry-core v0.0.0
-
-replace github.com/gantry-dev/gantry-core => ../../gantry-core
+require github.com/gantry-tools/gantry-core <version>
 ```
 
 The adapters retain product-specific names and wire types while delegating the

@@ -9,6 +9,7 @@ Shared, dependency-light Go building blocks extracted from Cortex and Warden.
 | `workspace` | root confinement, symlink checks and availability status | authorization, browsing APIs |
 | `editor` | text matching, binary detection, replacement and atomic writes | tabs, browser state, workspace authorization |
 | `terminal` | session validation/defaults and bounded UTF-8 scrollback | PTY/WebSocket implementation, persistence, authorization |
+| `auth` | account contracts, capabilities, password hashing, sessions, CSRF and audit normalization | product policy, OAuth/TOTP providers, migrations, management UI |
 
 Cross-product conventions are documented separately from executable packages.
 See [Gantry application routing and authentication convention](docs/ROUTING_AND_AUTH.md)

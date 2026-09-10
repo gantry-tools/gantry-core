@@ -18,6 +18,7 @@ authentication and frontend contracts stable during dogfooding.
 | Workspace boundary | `internal/app/app.go` | `internal/server/files.go` |
 | Editor primitives | future consumer | `internal/server/workspace.go`, `files.go` |
 | Terminal primitives | future consumer | `internal/server/terminal_sessions.go` |
+| Authentication primitives | future consumer | adopted in `internal/server/accounts.go`, `auth.go`, `server.go` |
 
 `conversations` remains a peer of `agent`, not its child. Durable transcripts
 have independent consumers and lifecycles—search, export, archival, rendering

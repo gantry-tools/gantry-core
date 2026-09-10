@@ -15,7 +15,7 @@ func TestWriteAccessError(t *testing.T) {
 			t.Fatalf("status %d produced %d %q", status, response.Code, response.Header().Get("Content-Type"))
 		}
 		body := response.Body.String()
-		if !strings.Contains(body, "Warden") || !strings.Contains(body, "/app/?return=%2F%3Fconfig") {
+		if !strings.Contains(body, "Warden") || !strings.Contains(body, "/app/?return=%2F%3Fconfig") || !strings.Contains(body, "--sorbet-red:#f38f92") {
 			t.Fatalf("status %d missing useful error content: %q", status, body)
 		}
 	}

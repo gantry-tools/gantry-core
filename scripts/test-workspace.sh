@@ -8,6 +8,9 @@ warden_dir=${WARDEN_DIR:-"$repo_dir/../warden-cv/warden"}
 test -f "$cortex_dir/go.mod"
 test -f "$warden_dir/go.mod"
 
+cortex_dir=$(CDPATH= cd -- "$cortex_dir" && pwd)
+warden_dir=$(CDPATH= cd -- "$warden_dir" && pwd)
+
 work_dir=$(mktemp -d)
 trap 'rm -rf "$work_dir"' EXIT HUP INT TERM
 cat >"$work_dir/go.work" <<EOF
@@ -21,6 +24,17 @@ use (
 EOF
 
 export GOWORK="$work_dir/go.work"
+
+# A consumer can pin a local, unpublished Gantry Core commit. Workspace main
+# modules normally supersede required versions, but the module graph still
+# resolves those pins before a first push. Add version-specific replacements so
+# local integration tests remain independent of remote repository state.
+for version in $(awk '
+	$1 == "require" && $2 == "github.com/gantry-tools/gantry-core" { print $3 }
+	$1 == "github.com/gantry-tools/gantry-core" { print $2 }
+' "$cortex_dir/go.mod" "$warden_dir/go.mod" | sort -u); do
+	go work edit -replace="github.com/gantry-tools/gantry-core@$version=$repo_dir"
+done
 
 (cd "$repo_dir" && go test -race ./... && go vet ./...)
 

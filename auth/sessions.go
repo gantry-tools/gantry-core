@@ -310,7 +310,9 @@ func (store *SessionStore) ListSessions(accountID string) []SessionView {
 	return out
 }
 
-func (store *SessionStore) CountSessions(accountID string) int { return len(store.ListSessions(accountID)) }
+func (store *SessionStore) CountSessions(accountID string) int {
+	return len(store.ListSessions(accountID))
+}
 
 func (store *SessionStore) RevokeSession(accountID, sessionID string) bool {
 	store.mu.Lock()
@@ -330,6 +332,28 @@ func (store *SessionStore) CurrentSessionID(request *http.Request) string {
 		return ""
 	}
 	return cookie.Value
+}
+
+// SnapshotSessions returns a detached copy of the active session set. Expired
+// sessions are removed before the snapshot is taken.
+func (store *SessionStore) SnapshotSessions() map[string]Session {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	now := time.Now()
+	changed := false
+	copy := make(map[string]Session, len(store.sessions))
+	for id, session := range store.sessions {
+		if !session.Expires.After(now) {
+			delete(store.sessions, id)
+			changed = true
+			continue
+		}
+		copy[id] = session
+	}
+	if changed {
+		_ = store.saveLocked()
+	}
+	return copy
 }
 
 func (store *SessionStore) saveLocked() error {

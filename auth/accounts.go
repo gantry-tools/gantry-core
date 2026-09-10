@@ -224,7 +224,7 @@ func HashPassword(password string) (string, error) {
 		return "", err
 	}
 	const iterations = 310000
-	derived := pbkdf2([]byte(password), salt, iterations, 32)
+	derived := PBKDF2SHA256([]byte(password), salt, iterations, 32)
 	return fmt.Sprintf("pbkdf2-sha256$%d$%s$%s", iterations, hex.EncodeToString(salt), base64.RawStdEncoding.EncodeToString(derived)), nil
 }
 
@@ -245,11 +245,14 @@ func VerifyPassword(encoded, password string) bool {
 	if err != nil || len(want) == 0 {
 		return false
 	}
-	got := pbkdf2([]byte(password), salt, iterations, len(want))
+	got := PBKDF2SHA256([]byte(password), salt, iterations, len(want))
 	return subtle.ConstantTimeCompare(got, want) == 1
 }
 
-func pbkdf2(password, salt []byte, iterations, size int) []byte {
+// PBKDF2SHA256 derives size bytes using PBKDF2-HMAC-SHA256. It is exported so
+// consumers can retain compatible encrypted-backup formats without duplicating
+// the password derivation implementation.
+func PBKDF2SHA256(password, salt []byte, iterations, size int) []byte {
 	out := make([]byte, 0, size)
 	for block := 1; len(out) < size; block++ {
 		counter := []byte{byte(block >> 24), byte(block >> 16), byte(block >> 8), byte(block)}

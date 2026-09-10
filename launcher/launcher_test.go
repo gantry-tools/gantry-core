@@ -1,6 +1,25 @@
 package launcher
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
+
+func TestWriteAccessError(t *testing.T) {
+	for _, status := range []int{http.StatusUnauthorized, http.StatusForbidden} {
+		response := httptest.NewRecorder()
+		WriteAccessError(response, status, "Warden", "W")
+		if response.Code != status || response.Header().Get("Content-Type") != "text/html; charset=utf-8" {
+			t.Fatalf("status %d produced %d %q", status, response.Code, response.Header().Get("Content-Type"))
+		}
+		body := response.Body.String()
+		if !strings.Contains(body, "Warden") || !strings.Contains(body, "/app/?return=%2F%3Fconfig") {
+			t.Fatalf("status %d missing useful error content: %q", status, body)
+		}
+	}
+}
 
 func TestPortableDocumentAndAppURLs(t *testing.T) {
 	port := 7331

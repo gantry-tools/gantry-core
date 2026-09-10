@@ -10,6 +10,11 @@ Shared, dependency-light Go building blocks extracted from Cortex and Warden.
 | `editor` | text matching, binary detection, replacement and atomic writes | tabs, browser state, workspace authorization |
 | `terminal` | session validation/defaults and bounded UTF-8 scrollback | PTY/WebSocket implementation, persistence, authorization |
 
+Cross-product conventions are documented separately from executable packages.
+See [Gantry application routing and authentication convention](docs/ROUTING_AND_AUTH.md)
+for the canonical `/`, `/app/` and `/manage/` layout and the shared security
+vocabulary.
+
 The packages intentionally remain separate even in one module. In particular, conversations are not nested under agent: a transcript can be imported, searched, rendered or migrated without starting an agent, while an agent runner can be used with a different persistence model.
 
 Run the full contract suite with:

@@ -16,13 +16,13 @@ import (
 
 var accessErrorPage = template.Must(template.New("launcher-access-error").Parse(`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>{{.Heading}} · {{.Product}}</title>
-<style>:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#151817;color:#edf1ee;--sorbet-red:#f38f92;--sorbet-red-bright:#ffa3a6;--sorbet-red-soft:rgba(243,143,146,.12)}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}.card{width:min(460px,100%);background:#1d211f;border:1px solid #3e3838;border-radius:12px;padding:30px;box-shadow:0 18px 50px rgba(0,0,0,.24)}.brand{display:flex;align-items:center;gap:12px;margin-bottom:26px}.mark{display:grid;place-items:center;width:34px;height:34px;border:1px solid rgba(243,143,146,.5);border-radius:7px;background:var(--sorbet-red-soft);color:var(--sorbet-red);font-weight:800}.brand strong{font-size:17px}.code{color:var(--sorbet-red);font-size:12px;font-weight:750;letter-spacing:.12em;text-transform:uppercase}h1{margin:8px 0 10px;color:var(--sorbet-red);font-size:28px;line-height:1.15}p{margin:0;color:#aab3ad;line-height:1.55}.actions{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap}a{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 15px;border-radius:7px;border:1px solid #3b433e;color:#e5ebe7;text-decoration:none;font-weight:650}a.primary{background:var(--sorbet-red);color:#281718;border-color:var(--sorbet-red)}a.primary:hover{background:var(--sorbet-red-bright);border-color:var(--sorbet-red-bright)}a:not(.primary):hover{border-color:rgba(243,143,146,.65);color:var(--sorbet-red-bright)}</style></head>
+<style>:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#151817;color:#edf1ee;--accent:{{.Accent}};--sorbet-red:#f38f92}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}.card{width:min(460px,100%);background:#1d211f;border:1px solid #3e3838;border-radius:12px;padding:30px;box-shadow:0 18px 50px rgba(0,0,0,.24)}.brand{display:flex;align-items:center;gap:12px;margin-bottom:26px}.mark{display:grid;place-items:center;width:34px;height:34px;border:1px solid color-mix(in srgb,var(--accent) 60%,#3b433e);border-radius:7px;color:var(--accent);font-weight:800}.brand strong{font-size:17px}.code{color:var(--sorbet-red);font-size:12px;font-weight:750;letter-spacing:.12em;text-transform:uppercase}h1{margin:8px 0 10px;color:var(--sorbet-red);font-size:28px;line-height:1.15}p{margin:0;color:#aab3ad;line-height:1.55}.actions{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap}a{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 15px;border-radius:7px;border:1px solid #3b433e;color:#e5ebe7;text-decoration:none;font-weight:650}a.primary{background:var(--accent);color:#101310;border-color:var(--accent)}a.primary:hover{filter:brightness(1.08)}a:not(.primary):hover{border-color:color-mix(in srgb,var(--accent) 55%,#3b433e);color:var(--accent)}</style></head>
 <body><main class="card"><div class="brand"><span class="mark">{{.Mark}}</span><strong>{{.Product}}</strong></div><div class="code">HTTP {{.Status}}</div><h1>{{.Heading}}</h1><p>{{.Message}}</p><div class="actions"><a class="primary" href="{{.ActionURL}}">{{.ActionLabel}}</a><a href="/">Back to launcher</a></div></main></body></html>`))
 
 // WriteAccessError renders the shared Gantry launcher authentication and
 // authorization error page. Launcher configuration APIs remain the security
 // boundary; this page makes a denied browser navigation explicit and useful.
-func WriteAccessError(w http.ResponseWriter, status int, product, mark string) {
+func WriteAccessError(w http.ResponseWriter, status int, product, mark, accent string) {
 	heading, message, actionLabel := "Permission denied", "Your account does not have permission to configure this launcher.", "Open application"
 	if status == http.StatusUnauthorized {
 		heading, message, actionLabel = "Authentication required", "Sign in with an account that can configure this launcher, then try again.", "Sign in"
@@ -33,7 +33,10 @@ func WriteAccessError(w http.ResponseWriter, status int, product, mark string) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(status)
-	_ = accessErrorPage.Execute(w, map[string]any{"Status": status, "Product": product, "Mark": mark, "Heading": heading, "Message": message, "ActionLabel": actionLabel, "ActionURL": "/app/?return=%2F%3Fconfig"})
+	if !regexp.MustCompile(`^#[0-9a-fA-F]{6}$`).MatchString(accent) {
+		accent = "#7fc89b"
+	}
+	_ = accessErrorPage.Execute(w, map[string]any{"Status": status, "Product": product, "Mark": mark, "Accent": template.CSS(accent), "Heading": heading, "Message": message, "ActionLabel": actionLabel, "ActionURL": "/app/?return=%2F%3Fconfig"})
 }
 
 const Version = 1

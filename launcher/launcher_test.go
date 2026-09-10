@@ -10,12 +10,12 @@ import (
 func TestWriteAccessError(t *testing.T) {
 	for _, status := range []int{http.StatusUnauthorized, http.StatusForbidden} {
 		response := httptest.NewRecorder()
-		WriteAccessError(response, status, "Warden", "W")
+		WriteAccessError(response, status, "Warden", "W", "#4ecb71")
 		if response.Code != status || response.Header().Get("Content-Type") != "text/html; charset=utf-8" {
 			t.Fatalf("status %d produced %d %q", status, response.Code, response.Header().Get("Content-Type"))
 		}
 		body := response.Body.String()
-		if !strings.Contains(body, "Warden") || !strings.Contains(body, "/app/?return=%2F%3Fconfig") || !strings.Contains(body, "--sorbet-red:#f38f92") {
+		if !strings.Contains(body, "Warden") || !strings.Contains(body, "/app/?return=%2F%3Fconfig") || !strings.Contains(body, "--sorbet-red:#f38f92") || !strings.Contains(body, "--accent:#4ecb71") {
 			t.Fatalf("status %d missing useful error content: %q", status, body)
 		}
 	}

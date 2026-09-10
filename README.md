@@ -34,6 +34,7 @@ trees, run the contracts and both consumer suites together with:
 
 `CORTEX_DIR` and `WARDEN_DIR` may override the default sibling paths. The
 script intentionally tests both consumers against this checkout through their
-local module replacements, so one change exercises the complete dogfood set.
+temporary workspace module replacements, so unpublished changes exercise the
+complete dogfood set without editing either consumer's reproducible module pin.
 
 Consumers use normal Go imports such as `github.com/gantry-tools/gantry-core/conversations`. Cortex and Warden pin an exact Gantry Core revision so their builds remain reproducible from standalone clones.

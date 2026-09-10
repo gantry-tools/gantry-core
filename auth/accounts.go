@@ -88,6 +88,7 @@ func ValidateAccounts(users AccountsFile, roles RolesFile, policy AccountPolicy)
 			if capability != "*" && policy.KnownCapability != nil && !policy.KnownCapability(capability) {
 				return fmt.Errorf("role %s has unknown capability %q", currentRole.ID, capability)
 			}
+		}
 	}
 	if !roleIDs["administrator"] {
 		return errors.New("administrator role is required")

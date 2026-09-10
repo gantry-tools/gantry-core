@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "capabilities": {
+    "account": {
+      "id": "acct_fixture",
+      "display_name": "Fixture user",
+      "enabled": true,
+      "roles": ["operator"],
+      "identities": [],
+      "created_at": "2026-01-01T00:00:00Z"
+    },
+    "roles": [
+      {
+        "id": "operator",
+        "name": "Operator",
+        "capabilities": ["launcher.configure.all", "monitor.read"]
+      }
+    ],
+    "expected": ["launcher.configure.all", "monitor.read"]
+  },
+  "audit": {
+    "input": "token=do-not-retain safe=value",
+    "expected": "token=[redacted] safe=value"
+  }
+}

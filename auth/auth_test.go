@@ -1,8 +1,11 @@
 package auth
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -111,5 +114,36 @@ func TestAuditRedactionAndOutcome(t *testing.T) {
 	event := NewAuditEvent("request", "authorization_denied", "/manage/", "a", "i", "127.0.0.1", "token=secret safe=value")
 	if event.Outcome != "denied" || event.Detail != "token=[redacted] safe=value" {
 		t.Fatalf("unexpected audit event: %#v", event)
+	}
+}
+
+func TestCompatibilityFixture(t *testing.T) {
+	data, err := os.ReadFile("testdata/compatibility.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fixture struct {
+		Version      int `json:"version"`
+		Capabilities struct {
+			Account  Account  `json:"account"`
+			Roles    []Role   `json:"roles"`
+			Expected []string `json:"expected"`
+		} `json:"capabilities"`
+		Audit struct {
+			Input    string `json:"input"`
+			Expected string `json:"expected"`
+		} `json:"audit"`
+	}
+	if err := json.Unmarshal(data, &fixture); err != nil {
+		t.Fatal(err)
+	}
+	if fixture.Version != 1 {
+		t.Fatalf("fixture version = %d", fixture.Version)
+	}
+	if got := EffectiveCapabilities(fixture.Capabilities.Account, fixture.Capabilities.Roles); !reflect.DeepEqual(got, fixture.Capabilities.Expected) {
+		t.Fatalf("capabilities = %#v, want %#v", got, fixture.Capabilities.Expected)
+	}
+	if got := RedactAuditDetail(fixture.Audit.Input); got != fixture.Audit.Expected {
+		t.Fatalf("audit detail = %q, want %q", got, fixture.Audit.Expected)
 	}
 }

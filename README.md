@@ -32,9 +32,10 @@ trees, run the contracts and both consumer suites together with:
 ./scripts/test-workspace.sh
 ```
 
-`CORTEX_DIR` and `WARDEN_DIR` may override the default sibling paths. The
-script intentionally tests both consumers against this checkout through their
+`CORTEX_DIR`, `WARDEN_DIR`, `TRESTLE_DIR`, `WATCHPOST_DIR`,
+`WATCHPOST_AGENT_DIR`, and `WEBFLEET_DIR` may override the default sibling
+paths. The script intentionally tests all consumers against this checkout through their
 temporary workspace module replacements, so unpublished changes exercise the
-complete dogfood set without editing either consumer's reproducible module pin.
+complete dogfood set without editing any consumer's reproducible module pin.
 
-Consumers use normal Go imports such as `github.com/gantry-tools/gantry-core/conversations`. Cortex and Warden pin an exact Gantry Core revision so their builds remain reproducible from standalone clones.
+Consumers use normal Go imports such as `github.com/gantry-tools/gantry-core/conversations`. Each consumer pins an exact Gantry Core revision so its build remains reproducible from a standalone clone.

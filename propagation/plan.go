@@ -95,6 +95,8 @@ func resolveConflict(e Envelope, d Existing) (Change, string) {
 				return ChangeUpdate, "authoritative source"
 			}
 			return ChangeConflict, "different authoritative owner"
+		case ConflictMerge:
+			return ChangeConflict, "merge requires an object-specific merge adapter"
 		case ConflictManual:
 			return ChangeConflict, "manual approval required"
 		default:

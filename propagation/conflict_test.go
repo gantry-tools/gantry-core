@@ -12,7 +12,7 @@ func TestConflictPolicies(t *testing.T) {
 		policy ConflictPolicy
 		want   Change
 	}{
-		{ConflictReject, ChangeConflict}, {ConflictSourceWins, ChangeUpdate}, {ConflictDestinationWins, ChangeNoop}, {ConflictManual, ChangeConflict}, {ConflictAuthoritative, ChangeConflict},
+		{ConflictReject, ChangeConflict}, {ConflictSourceWins, ChangeUpdate}, {ConflictDestinationWins, ChangeNoop}, {ConflictManual, ChangeConflict}, {ConflictAuthoritative, ChangeConflict}, {ConflictMerge, ChangeConflict},
 	}
 	for _, tc := range cases {
 		e := base

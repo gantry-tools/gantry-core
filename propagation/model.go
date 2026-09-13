@@ -19,6 +19,7 @@ const (
 	ConflictDestinationWins ConflictPolicy = "destination-wins"
 	ConflictManual          ConflictPolicy = "manual"
 	ConflictAuthoritative   ConflictPolicy = "authoritative-source"
+	ConflictMerge           ConflictPolicy = "merge"
 )
 
 type SecretRef struct {
@@ -70,7 +71,7 @@ func (e *Envelope) Validate() error {
 		return errors.New("source_node and target are required")
 	}
 	switch e.Conflict {
-	case ConflictReject, ConflictSourceWins, ConflictDestinationWins, ConflictManual, ConflictAuthoritative:
+	case ConflictReject, ConflictSourceWins, ConflictDestinationWins, ConflictManual, ConflictAuthoritative, ConflictMerge:
 	default:
 		return fmt.Errorf("unsupported conflict policy %q", e.Conflict)
 	}

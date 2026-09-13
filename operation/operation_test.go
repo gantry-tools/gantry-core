@@ -41,6 +41,17 @@ func TestRejectsMissingCLIForAutomatableOperation(t *testing.T) {
 	}
 }
 
+func TestCLIImplementationStateIsExplicit(t *testing.T) {
+	contract := fixture(t)[1]
+	if contract.CLI == nil || contract.CLI.Implemented {
+		t.Fatalf("fixture CLI = %#v", contract.CLI)
+	}
+	contract.CLI.Implemented = true
+	if err := contract.Validate(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRejectsDuplicateRouteAndCommand(t *testing.T) {
 	contracts := fixture(t)
 	duplicateRoute := contracts[0]

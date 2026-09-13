@@ -20,6 +20,7 @@ type Manifest struct {
 	Project           string               `json:"project"`
 	Operations        []operation.Contract `json:"operations"`
 	ObservedRoutes    []operation.Route    `json:"observed_routes"`
+	ObservedCommands  []operation.CLI      `json:"observed_commands,omitempty"`
 	WebsiteOperations []string             `json:"website_operations"`
 	Exceptions        []Exception          `json:"exceptions,omitempty"`
 }
@@ -79,6 +80,10 @@ func Check(manifest Manifest) Report {
 	for _, route := range manifest.ObservedRoutes {
 		observedRoutes[routeKey(route)] = true
 	}
+	observedCommands := map[string]bool{}
+	for _, command := range manifest.ObservedCommands {
+		observedCommands[command.Resource+" "+command.Verb] = true
+	}
 	for key, id := range declaredRoutes {
 		if !observedRoutes[key] {
 			add("route.unobserved", id, "declared operation route is not observed by the product")
@@ -98,6 +103,9 @@ func Check(manifest Manifest) Report {
 		for _, contract := range registry.Contracts() {
 			if contract.Automation == operation.Automatable && contract.CLI == nil {
 				add("cli.missing", contract.ID, "automatable operation has no CLI mapping")
+			}
+			if contract.CLI != nil && contract.CLI.Implemented && !observedCommands[contract.CLI.Resource+" "+contract.CLI.Verb] {
+				add("cli.unobserved", contract.ID, "implemented CLI command is not observed by the product")
 			}
 			if contract.Kind != operation.Read && !contract.Audit.Required {
 				add("audit.missing", contract.ID, "mutation has no required audit event")

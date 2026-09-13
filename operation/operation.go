@@ -44,8 +44,9 @@ type Route struct {
 }
 
 type CLI struct {
-	Resource string `json:"resource"`
-	Verb     string `json:"verb"`
+	Resource    string `json:"resource"`
+	Verb        string `json:"verb"`
+	Implemented bool   `json:"implemented"`
 }
 
 type Authorization struct {

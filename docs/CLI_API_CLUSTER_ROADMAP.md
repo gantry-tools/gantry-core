@@ -85,7 +85,9 @@ are limited to reads or explicitly idempotent keyed mutations.
 CP7 evidence: the `contracttest` package. Consumer-supplied runtime observations
 are checked against executable contracts, with deterministic failures for
 undeclared/unobserved routes, uncovered website operations, stale or unjustified
-exceptions, duplicate mappings and missing automation/audit declarations.
+exceptions, duplicate mappings and missing automation/audit declarations. CLI
+mappings reserve the canonical resource/verb grammar; only mappings explicitly
+marked implemented and observed by a product test count as executable coverage.
 
 ## Phase 2 - Watchpost proves clustering
 

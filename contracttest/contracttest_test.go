@@ -62,3 +62,16 @@ func TestFindingsAreDeterministic(t *testing.T) {
 		t.Fatalf("findings = %#v", report.Findings)
 	}
 }
+
+func TestImplementedCLIRequiresRuntimeObservation(t *testing.T) {
+	manifest := validManifest()
+	manifest.Operations[0].CLI.Implemented = true
+	err := Require(manifest)
+	if err == nil || !strings.Contains(err.Error(), "cli.unobserved") {
+		t.Fatalf("error = %v", err)
+	}
+	manifest.ObservedCommands = []operation.CLI{{Resource: "items", Verb: "list", Implemented: true}}
+	if err := Require(manifest); err != nil {
+		t.Fatal(err)
+	}
+}

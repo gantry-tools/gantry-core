@@ -169,24 +169,26 @@ Phase 4 acceptance: Watchpost, Trestle, and Webfleet now share the Gantry cluste
 
 ## Phase 5 - Complete functional API/CLI coverage
 
-- [ ] **CP34 Authoritative coverage matrices.** Generate UI/API/CLI/permission/
+- [x] **CP34 Authoritative coverage matrices.** Generate UI/API/CLI/permission/
   schema/test matrices and fail CI on undeclared drift.
-- [ ] **CP35 Cortex completion.** Cover setup, accounts, providers/policy,
+- [x] **CP35 Cortex completion.** Cover setup, accounts, providers/policy,
   workspaces, conversations, agent execution, launcher, service and diagnostics.
-- [ ] **CP36 Warden completion.** Cover accounts/security, workspaces/editor,
+- [x] **CP36 Warden completion.** Cover accounts/security, workspaces/editor,
   agents, terminals, provider policy, launcher, service and diagnostics.
-- [ ] **CP37 Trestle completion.** Cover database setup, collections, records,
+- [x] **CP37 Trestle completion.** Cover database setup, collections, records,
   auth/access, files, jobs, functions, webhooks, realtime, backups and cluster.
-- [ ] **CP38 Watchpost/Agent completion.** Cover monitors, alerts, agents,
+- [x] **CP38 Watchpost/Agent completion.** Cover monitors, alerts, agents,
   telemetry, evidence, lifecycle, pairing, clustering and diagnostics.
-- [ ] **CP39 Webfleet completion.** Cover sites, requests, environments,
+- [x] **CP39 Webfleet completion.** Cover sites, requests, environments,
   analytics, monitors, audits, schedules, runs, clustering and diagnostics.
-- [ ] **CP40 Authorization parity.** Prove identical permissions, revocation,
+- [x] **CP40 Authorization parity.** Prove identical permissions, revocation,
   policy enforcement, secret masking, confirmations and actor-specific audit.
-- [ ] **CP41 Automation dogfood.** Exercise stdin/files, JSON, pagination,
+- [x] **CP41 Automation dogfood.** Exercise stdin/files, JSON, pagination,
   idempotency, expiry, timeouts, partial failure and stable exits through scripts.
-- [ ] **CP42 Public certification.** Publish generated API/CLI references,
+- [x] **CP42 Public certification.** Publish generated API/CLI references,
   authentication guidance, automation examples and truthful coverage reports.
+
+Phase 5 acceptance: generated and CI-pinned coverage matrices now replace the smoke baseline across all six product surfaces; every declared automatable operation has an observed CLI mapping and schema/evidence metadata, browser/service/streaming exceptions are explicit, shared security/automation rules are enforced, and each product publishes CLI/API/auth/permissions/exit/schema/automation documentation beside its generated coverage statement.
 
 ## Phase 6 - Configuration and policy propagation
 

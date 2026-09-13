@@ -1,8 +1,11 @@
 package contracttest
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -162,4 +165,53 @@ func CertificationFindings(manifest Manifest) []Finding {
 		return a < b
 	})
 	return findings
+}
+
+// CheckMatrixArtifacts verifies committed generated coverage artifacts match the
+// current tested manifest byte-for-byte. CI can call this from product tests so
+// coverage documentation cannot silently drift from runtime contracts.
+func CheckMatrixArtifacts(jsonPath, markdownPath string, manifest Manifest) error {
+	matrix := BuildMatrix(manifest)
+	wantJSON, err := matrix.JSON()
+	if err != nil {
+		return err
+	}
+	wantJSON = append(wantJSON, '\n')
+	gotJSON, err := os.ReadFile(jsonPath)
+	if err != nil {
+		return fmt.Errorf("read coverage JSON: %w", err)
+	}
+	if !bytes.Equal(gotJSON, wantJSON) {
+		return fmt.Errorf("coverage JSON is stale: regenerate %s", jsonPath)
+	}
+	wantMD := []byte(matrix.Markdown())
+	gotMD, err := os.ReadFile(markdownPath)
+	if err != nil {
+		return fmt.Errorf("read coverage Markdown: %w", err)
+	}
+	if !bytes.Equal(gotMD, wantMD) {
+		return fmt.Errorf("coverage Markdown is stale: regenerate %s", markdownPath)
+	}
+	return nil
+}
+
+// WriteMatrixArtifacts writes deterministic machine- and human-readable
+// coverage snapshots. The files are intended to be committed and checked by CI.
+func WriteMatrixArtifacts(jsonPath, markdownPath string, manifest Manifest) error {
+	matrix := BuildMatrix(manifest)
+	jsonData, err := matrix.JSON()
+	if err != nil {
+		return err
+	}
+	jsonData = append(jsonData, '\n')
+	if err := os.MkdirAll(filepath.Dir(jsonPath), 0o755); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(markdownPath), 0o755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(jsonPath, jsonData, 0o644); err != nil {
+		return err
+	}
+	return os.WriteFile(markdownPath, []byte(matrix.Markdown()), 0o644)
 }

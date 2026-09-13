@@ -40,7 +40,7 @@ tests, documentation and the checkpoint commit are all required.
 - [x] **CP6 Client and command transport.** Add a dependency-light HTTP client
   and local executor abstraction with TLS, tokens, timeouts, cancellation,
   pagination, streaming and safe retry classification.
-- [ ] **CP7 Contract-test harness.** Make manifests testable for uniqueness,
+- [x] **CP7 Contract-test harness.** Make manifests testable for uniqueness,
   authorization, route/CLI parity, schemas, redaction and declared exceptions.
 - [ ] **CP8 Cross-project adoption smoke pass.** In every consumer, register and
   test at least one read, one mutation and one destructive or security-sensitive
@@ -81,6 +81,11 @@ CP6 evidence: the `client` package. HTTP and local execution consume the same
 operation contract; remote calls are bounded, cancellable and credential-source
 driven; token files must be private; route variables are escaped; and retries
 are limited to reads or explicitly idempotent keyed mutations.
+
+CP7 evidence: the `contracttest` package. Consumer-supplied runtime observations
+are checked against executable contracts, with deterministic failures for
+undeclared/unobserved routes, uncovered website operations, stale or unjustified
+exceptions, duplicate mappings and missing automation/audit declarations.
 
 ## Phase 2 - Watchpost proves clustering
 

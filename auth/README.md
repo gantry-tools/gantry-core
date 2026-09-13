@@ -16,3 +16,9 @@ those concerns through `AccountProvider`, `SessionPersistence` and
 
 The package intentionally does not provide a central identity service. Every
 installation remains independently authoritative.
+
+`Actor` and `Execution` also keep human sessions, scoped API tokens, service
+identities and cluster-node identities structurally separate. Project and
+installation identity are part of every actor: equal account IDs in two
+installations do not create a shared account, and node/service credentials can
+never inherit human roles or capabilities.

@@ -31,7 +31,7 @@ tests, documentation and the checkpoint commit are all required.
 - [x] **CP3 CLI grammar and behavior.** Implement shared parsing and behavioral
   contracts for resource/verb commands, JSON/file/stdin input, output modes,
   quiet operation, confirmations, timeouts and stable exit codes.
-- [ ] **CP4 Authentication and execution contexts.** Model local execution,
+- [x] **CP4 Authentication and execution contexts.** Model local execution,
   remote tokens and future node execution without sharing human accounts or
   allowing one actor type to inherit another's authority.
 - [ ] **CP5 Input, output and error primitives.** Add bounded strict JSON,
@@ -66,6 +66,11 @@ commands with file/stdin JSON, table/JSON/plain output, quiet mode, explicit
 confirmation, timeouts, request IDs and remote origins. Exit codes 0-7 are
 reserved by contract. Raw tokens are rejected as arguments; protected token
 files or consumer-supplied credential sources are the supported boundary.
+
+CP4 evidence: `auth.Actor`, `auth.Execution` and `auth.Authorize`. Human,
+API-token, service and node identities carry mutually exclusive authority;
+project/installation locality is validated; and cluster execution requires a
+cluster-node actor rather than a human session.
 
 ## Phase 2 - Watchpost proves clustering
 

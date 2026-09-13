@@ -23,6 +23,7 @@ type Manifest struct {
 	ObservedCommands  []operation.CLI      `json:"observed_commands,omitempty"`
 	WebsiteOperations []string             `json:"website_operations"`
 	Exceptions        []Exception          `json:"exceptions,omitempty"`
+	Evidence          map[string]Evidence  `json:"evidence,omitempty"`
 }
 
 type Finding struct {

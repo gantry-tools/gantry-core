@@ -25,6 +25,19 @@ go test ./...
 go test -race ./...
 ```
 
+For a checkout containing all sibling Gantry projects, create the persistent
+Go workspace once:
+
+```sh
+./scripts/configure-local-workspace.sh
+```
+
+The resulting top-level `go.work` is discovered automatically by `go build`
+inside Cortex, Warden, Trestle, Watchpost, Watchpost Agent and Webfleet. It uses
+the local `gantry-core` checkout even when a consumer pins an unpublished
+revision. Standalone repository clones continue to use the released module
+version from their own `go.mod`.
+
 When this repository is checked out beside the supplied Cortex and Warden
 trees, run the contracts and both consumer suites together with:
 

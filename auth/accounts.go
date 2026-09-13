@@ -234,15 +234,15 @@ func VerifyPassword(encoded, password string) bool {
 		return false
 	}
 	iterations, err := strconv.Atoi(parts[1])
-	if err != nil || iterations < 100000 {
+	if err != nil || iterations != 310000 {
 		return false
 	}
 	salt, err := hex.DecodeString(parts[2])
-	if err != nil {
+	if err != nil || len(salt) != 16 {
 		return false
 	}
 	want, err := base64.RawStdEncoding.DecodeString(parts[3])
-	if err != nil || len(want) == 0 {
+	if err != nil || len(want) != 32 {
 		return false
 	}
 	got := PBKDF2SHA256([]byte(password), salt, iterations, len(want))

@@ -52,6 +52,15 @@ func (p Profile) Validate() error {
 	if len(p.Kinds) == 0 {
 		return fmt.Errorf("at least one kind required")
 	}
+	if p.Schedule != "" {
+		d, err := time.ParseDuration(p.Schedule)
+		if err != nil || d <= 0 {
+			return fmt.Errorf("invalid propagation schedule %q", p.Schedule)
+		}
+	}
+	if _, err := InMaintenanceWindow(p.MaintenanceWindow, time.Now()); err != nil {
+		return err
+	}
 	return nil
 }
 func DetectDrift(node string, expected []Envelope, actual map[string]Existing) []Drift {

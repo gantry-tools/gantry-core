@@ -80,6 +80,12 @@ func (m *Manager) SaveProfile(ctx context.Context, p Profile) error {
 	}
 	return m.Store.SaveProfile(ctx, p)
 }
+func (m *Manager) DeleteProfile(ctx context.Context, id string) error {
+	if m.Store == nil {
+		return errors.New("propagation state store required")
+	}
+	return m.Store.DeleteProfile(ctx, id)
+}
 func (m *Manager) Profiles(ctx context.Context) ([]Profile, error) {
 	if m.Store == nil {
 		return nil, errors.New("propagation state store required")

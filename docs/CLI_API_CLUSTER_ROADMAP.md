@@ -28,7 +28,7 @@ tests, documentation and the checkpoint commit are all required.
 - [x] **CP2 Canonical operation model.** Implement the versioned operation,
   route, input/output, authorization, audit, idempotency and automation model in
   Gantry Core, with compatibility fixtures.
-- [ ] **CP3 CLI grammar and behavior.** Implement shared parsing and behavioral
+- [x] **CP3 CLI grammar and behavior.** Implement shared parsing and behavioral
   contracts for resource/verb commands, JSON/file/stdin input, output modes,
   quiet operation, confirmations, timeouts and stable exit codes.
 - [ ] **CP4 Authentication and execution contexts.** Model local execution,
@@ -60,6 +60,12 @@ CP2 evidence: the `operation` package and its compatibility fixture. A registry
 rejects duplicate IDs, routes and CLI mappings; automatable operations require
 a CLI mapping; mutations require audit; retry safety is explicit; and node
 authorization cannot inherit a human capability.
+
+CP3 evidence: the `cli` package. The common grammar accepts resource/verb
+commands with file/stdin JSON, table/JSON/plain output, quiet mode, explicit
+confirmation, timeouts, request IDs and remote origins. Exit codes 0-7 are
+reserved by contract. Raw tokens are rejected as arguments; protected token
+files or consumer-supplied credential sources are the supported boundary.
 
 ## Phase 2 - Watchpost proves clustering
 

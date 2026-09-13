@@ -33,7 +33,7 @@ The campaign's architectural boundaries are mandatory:
 
 ## Release state
 
-- Released stable: **v0.1.1** (stable public preview).
+- Released stable: **v0.2.0** (stable public preview).
 - Current development: **0.1.2** after the coordinated Phase 1 consumer
   adoption commits.
 - Consumers should pin stable semantic versions rather than unpublished pseudo-versions.

@@ -66,6 +66,10 @@ func ExecuteProfile(ctx context.Context, p Profile, actor Actor, x ProfileExecut
 	if out.Drift == 0 && out.Failed == 0 {
 		return out, nil
 	}
+	if p.Mode == ReconcileAutomatic && blocked {
+		out.Action = "apply"
+		return out, fmt.Errorf("automatic reconciliation blocked by failed or inapplicable preview")
+	}
 	decision := DecideReconcile(p, make([]Drift, out.Drift), x.now())
 	out.Action = decision.Action
 	switch decision.Action {

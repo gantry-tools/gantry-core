@@ -34,7 +34,7 @@ tests, documentation and the checkpoint commit are all required.
 - [x] **CP4 Authentication and execution contexts.** Model local execution,
   remote tokens and future node execution without sharing human accounts or
   allowing one actor type to inherit another's authority.
-- [ ] **CP5 Input, output and error primitives.** Add bounded strict JSON,
+- [x] **CP5 Input, output and error primitives.** Add bounded strict JSON,
   pagination/filter primitives, structured errors, renderers, confirmations,
   redaction, request IDs and idempotency keys.
 - [ ] **CP6 Client and command transport.** Add a dependency-light HTTP client
@@ -71,6 +71,11 @@ CP4 evidence: `auth.Actor`, `auth.Execution` and `auth.Authorize`. Human,
 API-token, service and node identities carry mutually exclusive authority;
 project/installation locality is validated; and cluster execution requires a
 cluster-node actor rather than a human session.
+
+CP5 evidence: the `protocol` package. Strict decoding is size-bounded and
+rejects unknown/trailing input; structured errors map consistently to HTTP and
+CLI; pagination, exact confirmation, request/idempotency keys, deep-copy secret
+redaction and deterministic output modes have focused tests.
 
 ## Phase 2 - Watchpost proves clustering
 

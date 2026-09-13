@@ -1,6 +1,8 @@
 package cluster
 
 import (
+	"crypto/ed25519"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
@@ -131,4 +133,47 @@ func Compatible(localProtocol, remoteProtocol int, localCaps, remoteCaps []strin
 		return errors.New("cluster capability unavailable")
 	}
 	return nil
+}
+
+type GeneratedIdentity struct {
+	Identity   Identity
+	PrivateKey []byte
+}
+
+func GenerateIdentity(nodePrefix, installationPrefix string, capabilities []string, protocolVersion int, productVersion string, now time.Time) (GeneratedIdentity, error) {
+	if protocolVersion <= 0 {
+		return GeneratedIdentity{}, errors.New("cluster protocol version required")
+	}
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return GeneratedIdentity{}, err
+	}
+	nodeID, err := NewID(nodePrefix, 16)
+	if err != nil {
+		return GeneratedIdentity{}, err
+	}
+	installationID, err := NewID(installationPrefix, 16)
+	if err != nil {
+		return GeneratedIdentity{}, err
+	}
+	return GeneratedIdentity{
+		Identity: Identity{
+			NodeID: nodeID, InstallationID: installationID,
+			PublicKey:    base64.RawURLEncoding.EncodeToString(publicKey),
+			Capabilities: NormalizeCapabilities(capabilities), ProtocolVersion: protocolVersion,
+			ProductVersion: productVersion, CreatedAt: now.UTC(),
+		},
+		PrivateKey: append([]byte(nil), privateKey...),
+	}, nil
+}
+
+func NewID(prefix string, n int) (string, error) {
+	if n <= 0 {
+		return "", errors.New("cluster id entropy required")
+	}
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return prefix + base64.RawURLEncoding.EncodeToString(b), nil
 }

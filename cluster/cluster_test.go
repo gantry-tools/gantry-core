@@ -73,3 +73,45 @@ func TestTargetAndFanout(t *testing.T) {
 		t.Fatalf("%#v", got)
 	}
 }
+
+func TestGeneratedIdentityAndInvitation(t *testing.T) {
+	now := time.Now().UTC()
+	generated, err := GenerateIdentity("n_", "i_", []string{"b", "a", "a"}, ProtocolVersion, "dev", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if generated.Identity.NodeID == "" || generated.Identity.InstallationID == "" || len(generated.PrivateKey) == 0 {
+		t.Fatal("generated identity incomplete")
+	}
+	if len(generated.Identity.Capabilities) != 2 || generated.Identity.Capabilities[0] != "a" {
+		t.Fatalf("capabilities=%v", generated.Identity.Capabilities)
+	}
+	inv, token, err := NewInvitation(now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if inv.State != PairingPending || token == "" || !inv.ExpiresAt.After(now) {
+		t.Fatal("invalid generated invitation")
+	}
+	if !VerifySecretDigest(token, SecretDigest(token)) {
+		t.Fatal("secret digest mismatch")
+	}
+}
+
+func TestVerifyIncomingPromotesPending(t *testing.T) {
+	now := time.Now().UTC()
+	secret := "01234567890123456789012345678901"
+	pending := "abcdefghijklmnopqrstuvwxyzABCDEF"
+	body := []byte(`{"ok":true}`)
+	timestamp := now.Format(time.RFC3339Nano)
+	env := RequestEnvelope{NodeID: "peer", Timestamp: now, Nonce: "nonce", RequestID: "req", Protocol: ProtocolVersion, Capability: "cluster.health"}
+	env.Signature = Signature(pending, http.MethodPost, "/rpc", timestamp, env.Nonce, env.RequestID, env.Capability, body)
+	expires := now.Add(time.Minute)
+	result, err := VerifyIncoming(VerifyRequestInput{Material: AuthMaterial{State: MemberActive, Protocol: ProtocolVersion, Capabilities: []string{"cluster.health"}, CurrentHash: SecretDigest(secret), PendingHash: SecretDigest(pending), PendingExpires: &expires}, RequiredCapability: "cluster.health", PresentedSecret: pending, Method: http.MethodPost, RequestURI: "/rpc", Envelope: env, Body: body, Now: now})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.PromotePending {
+		t.Fatal("pending credential was not promoted")
+	}
+}

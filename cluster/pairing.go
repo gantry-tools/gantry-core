@@ -1,7 +1,9 @@
 package cluster
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"errors"
 	"strings"
@@ -109,4 +111,26 @@ func NewSecret(n int) (string, error) {
 		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func NewInvitation(now time.Time) (Invitation, string, error) {
+	id, err := NewID("inv_", 12)
+	if err != nil {
+		return Invitation{}, "", err
+	}
+	token, err := NewSecret(MinimumCredentialBytes)
+	if err != nil {
+		return Invitation{}, "", err
+	}
+	return Invitation{ID: id, State: PairingPending, ExpiresAt: now.UTC().Add(PairingLifetime), CreatedAt: now.UTC()}, token, nil
+}
+
+func SecretDigest(secret string) []byte {
+	sum := sha256.Sum256([]byte(secret))
+	return append([]byte(nil), sum[:]...)
+}
+
+func VerifySecretDigest(secret string, digest []byte) bool {
+	actual := sha256.Sum256([]byte(secret))
+	return hmac.Equal(actual[:], digest)
 }

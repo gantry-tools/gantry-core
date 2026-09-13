@@ -128,24 +128,24 @@ Phase 2 implementation status: CP9-CP17 are implemented locally in Watchpost. Fu
 
 ## Phase 3 - Extract only the proven model
 
-- [ ] **CP18 Proven-model audit.** Separate generic identity, ceremony,
+- [x] **CP18 Proven-model audit.** Separate generic identity, ceremony,
   transport and fan-out from Watchpost policy and Agent behavior.
-- [ ] **CP19 Shared cluster domain.** Extract versioned node, membership,
+- [x] **CP19 Shared cluster domain.** Extract versioned node, membership,
   invitation, capability, health, target and result contracts behind storage
   adapters.
-- [ ] **CP20 Shared secure transport.** Extract envelopes, peer authentication,
+- [x] **CP20 Shared secure transport.** Extract envelopes, peer authentication,
   replay protection, limits, retry classification and structured errors.
-- [ ] **CP21 Shared pairing lifecycle.** Extract invite through re-pair while
+- [x] **CP21 Shared pairing lifecycle.** Extract invite through re-pair while
   leaving branding, persistence and permissions in consumers.
-- [ ] **CP22 Shared routing and fan-out.** Extract selectors, bounded parallelism,
+- [x] **CP22 Shared routing and fan-out.** Extract selectors, bounded parallelism,
   cancellation, idempotency and partial-result aggregation.
-- [ ] **CP23 Shared cluster CLI.** Supply identical `cluster init`, `invite`,
+- [x] **CP23 Shared cluster CLI.** Supply identical `cluster init`, `invite`,
   `join`, `approve`, `members`, `status`, `rotate`, `revoke` and `remove` forms.
-- [ ] **CP24 Shared UI/API contracts.** Supply common wire shapes and reusable
+- [x] **CP24 Shared UI/API contracts.** Supply common wire shapes and reusable
   interaction behavior while retaining each product's design.
-- [ ] **CP25 Rebase Watchpost.** Delete its duplicated generic implementation
+- [x] **CP25 Rebase Watchpost.** Delete its duplicated generic implementation
   and prove unchanged behavior through Gantry Core.
-- [ ] **CP26 Compatibility and upgrades.** Prove restart persistence, rolling
+- [x] **CP26 Compatibility and upgrades.** Prove restart persistence, rolling
   compatible upgrades, fail-closed incompatibility and retained Agent pairs.
 
 ## Phase 4 - Trestle and Webfleet adoption

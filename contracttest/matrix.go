@@ -215,3 +215,33 @@ func WriteMatrixArtifacts(jsonPath, markdownPath string, manifest Manifest) erro
 	}
 	return os.WriteFile(markdownPath, []byte(matrix.Markdown()), 0o644)
 }
+
+// SecurityFindings applies the Phase-5 authorization/secret/audit rules that
+// are independent of any one product implementation. Product tests remain
+// responsible for exercising disabled/revoked actors and application policy.
+func SecurityFindings(manifest Manifest) []Finding {
+	var findings []Finding
+	for _, c := range manifest.Operations {
+		if c.Authorization.Boundary == operation.Public && c.Kind == operation.Destructive {
+			findings = append(findings, Finding{Code: "security.public-destructive", Subject: c.ID, Message: "destructive operation cannot be public"})
+		}
+		if len(c.Authorization.TokenScopes) != 0 && c.Authorization.Boundary != operation.Session && c.Authorization.Boundary != operation.Capability {
+			findings = append(findings, Finding{Code: "security.token-boundary", Subject: c.ID, Message: "API-token scopes require a human session/capability boundary"})
+		}
+		if c.Kind != operation.Read && (!c.Audit.Required || c.Audit.Event == "") {
+			findings = append(findings, Finding{Code: "security.audit", Subject: c.ID, Message: "mutation/destructive operation lacks an audit event"})
+		}
+		if c.Kind == operation.Read && len(c.SecretInputs) != 0 {
+			findings = append(findings, Finding{Code: "security.read-secret-input", Subject: c.ID, Message: "read operation declares secret input"})
+		}
+		if c.Automation == operation.Automatable && c.Kind == operation.Destructive && (c.CLI == nil || !c.CLI.Implemented) {
+			findings = append(findings, Finding{Code: "security.destructive-cli", Subject: c.ID, Message: "destructive operation lacks confirmed CLI path"})
+		}
+	}
+	sort.Slice(findings, func(i, j int) bool {
+		a := findings[i].Code + "\x00" + findings[i].Subject
+		b := findings[j].Code + "\x00" + findings[j].Subject
+		return a < b
+	})
+	return findings
+}

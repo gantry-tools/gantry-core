@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/gantry-tools/gantry-core/cli"
@@ -93,6 +94,9 @@ func Run(args []string, contracts []operation.Contract, options Options) int {
 	}
 	if inv.RequestID != "" {
 		req.Header.Set("X-Request-ID", inv.RequestID)
+		if c.Idempotency.Supported {
+			req.Header.Set("Idempotency-Key", inv.RequestID)
+		}
 	}
 	if inv.TokenFile != "" {
 		token, e := readSecret(inv.TokenFile)
@@ -104,7 +108,7 @@ func Run(args []string, contracts []operation.Contract, options Options) int {
 	}
 	var loaded sessionFile
 	if inv.SessionFile != "" {
-		if data, e := os.ReadFile(inv.SessionFile); e == nil {
+		if data, e := readProtectedFile(inv.SessionFile); e == nil {
 			if json.Unmarshal(data, &loaded) != nil || loaded.Cookie == "" {
 				fmt.Fprintln(output(options.Stderr, os.Stderr), options.Program+": invalid session file")
 				return cli.ExitAuth
@@ -235,7 +239,7 @@ func readInput(path string, stdin io.Reader) ([]byte, error) {
 	return data, nil
 }
 func readSecret(path string) (string, error) {
-	data, e := os.ReadFile(path)
+	data, e := readProtectedFile(path)
 	if e != nil {
 		return "", e
 	}
@@ -245,6 +249,17 @@ func readSecret(path string) (string, error) {
 	}
 	return v, nil
 }
+func readProtectedFile(path string) ([]byte, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	if runtime.GOOS != "windows" && info.Mode().Perm()&0o077 != 0 {
+		return nil, fmt.Errorf("credential file %s must not be accessible by group/others (use chmod 600)", path)
+	}
+	return os.ReadFile(path)
+}
+
 func writeSession(path string, s sessionFile) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil && filepath.Dir(path) != "." {
 		return err

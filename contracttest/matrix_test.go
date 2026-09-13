@@ -29,3 +29,10 @@ func TestCertificationRejectsUnprovenAutomation(t *testing.T) {
 		t.Fatalf("expected evidence/CLI/schema findings, got %v", got)
 	}
 }
+
+func TestSecurityFindingsRejectPublicDestructive(t *testing.T) {
+	m := Manifest{Project: "demo", Operations: []operation.Contract{{SchemaVersion: 1, ID: "demo.reset.apply", Kind: operation.Destructive, Route: operation.Route{Method: "POST", Path: "/reset"}, CLI: &operation.CLI{Resource: "reset", Verb: "apply", Implemented: true}, Authorization: operation.Authorization{Boundary: operation.Public}, Schemas: operation.Schemas{Input: "reset.request.v1", Output: "reset.response.v1"}, Audit: operation.Audit{Required: true, Event: "demo.reset.applied"}, Automation: operation.Automatable}}, ObservedRoutes: []operation.Route{{Method: "POST", Path: "/reset"}}, ObservedCommands: []operation.CLI{{Resource: "reset", Verb: "apply", Implemented: true}}, Evidence: map[string]Evidence{"demo.reset.apply": {Tests: []string{"reset_test"}}}}
+	if len(SecurityFindings(m)) == 0 {
+		t.Fatal("expected security finding")
+	}
+}

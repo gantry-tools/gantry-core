@@ -42,7 +42,7 @@ tests, documentation and the checkpoint commit are all required.
   pagination, streaming and safe retry classification.
 - [x] **CP7 Contract-test harness.** Make manifests testable for uniqueness,
   authorization, route/CLI parity, schemas, redaction and declared exceptions.
-- [ ] **CP8 Cross-project adoption smoke pass.** In every consumer, register and
+- [x] **CP8 Cross-project adoption smoke pass.** In every consumer, register and
   test at least one read, one mutation and one destructive or security-sensitive
   operation through the shared contract without changing product behavior.
 
@@ -88,6 +88,19 @@ undeclared/unobserved routes, uncovered website operations, stale or unjustified
 exceptions, duplicate mappings and missing automation/audit declarations. CLI
 mappings reserve the canonical resource/verb grammar; only mappings explicitly
 marked implemented and observed by a product test count as executable coverage.
+
+CP8 evidence: each consumer now pins Gantry Core v0.1.1 and owns an
+`internal/operations` adoption manifest covering a read, mutation and
+destructive or security-sensitive operation. The complete ordinary, race and
+vet suites passed from the versioned module archive. Checkpoint commits are
+Cortex `32375b1`, Warden `27b2a7d`, Trestle `d6f96d7`, Watchpost `9cb1bc4`,
+Watchpost Agent `da41d8a` and Webfleet `1fd4840`. Reserved CLI mappings remain
+explicitly unimplemented, so the inventory truthfully retains the Phase 5 gap.
+
+Post-Phase-1 review: CP9 remains the next smallest coherent step. Watchpost must
+first define the topology and ownership boundary between peer servers and its
+existing server-to-Agent pairing before node identities, ceremonies or shared
+cluster abstractions can be designed without guessing.
 
 ## Phase 2 - Watchpost proves clustering
 

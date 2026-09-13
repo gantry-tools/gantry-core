@@ -104,24 +104,26 @@ cluster abstractions can be designed without guessing.
 
 ## Phase 2 - Watchpost proves clustering
 
+Phase 2 implementation status: CP9-CP17 are implemented locally in Watchpost. Full release certification still requires rerunning the complete Watchpost Go 1.25 test/race/vet wall with the real dependency set; the constrained build environment used for this checkpoint could execute the cluster/store gates only via a disposable system-SQLite validation adapter.
+
 - [x] **CP9 Boundaries and topology.** Define server-to-server clustering,
   ownership and deferred data-replication behavior separately from existing
   Watchpost-to-Agent pairing.
-- [ ] **CP10 Node identity.** Add stable installation/node IDs, public identity,
+- [x] **CP10 Node identity.** Add stable installation/node IDs, public identity,
   endpoints, capabilities, versions, lifecycle timestamps and revocation.
-- [ ] **CP11 Pairing ceremony.** Add short-lived single-use invite, join,
+- [x] **CP11 Pairing ceremony.** Add short-lived single-use invite, join,
   inspect, approve, reject and replay-safe audit flows in CLI and `/app/`.
-- [ ] **CP12 Authenticated transport.** Add TLS, peer authentication, signed or
+- [x] **CP12 Authenticated transport.** Add TLS, peer authentication, signed or
   mutually authenticated requests, nonces, bounded requests and negotiation.
-- [ ] **CP13 Membership and health.** Add member state, last contact, latency,
+- [x] **CP13 Membership and health.** Add member state, last contact, latency,
   compatibility, disable/remove and credential rotation.
-- [ ] **CP14 First distributed read.** Prove targeted and bounded fan-out health
+- [x] **CP14 First distributed read.** Prove targeted and bounded fan-out health
   with deterministic per-node and partial-failure results.
-- [ ] **CP15 Watchpost distributed operations.** Add useful aggregate status and
+- [x] **CP15 Watchpost distributed operations.** Add useful aggregate status and
   explicit ownership without duplicating agents or monitoring work.
-- [ ] **CP16 Cluster UI.** Add pairing, membership, health, rotation, revocation
+- [x] **CP16 Cluster UI.** Add pairing, membership, health, rotation, revocation
   and audit views beside Agent pairing in the Watchpost `/app/` SPA.
-- [ ] **CP17 Failure and recovery.** Test expiry, replay, partition, offline
+- [x] **CP17 Failure and recovery.** Test expiry, replay, partition, offline
   peers, rotation interruption, incompatibility, removal and re-pairing.
 
 ## Phase 3 - Extract only the proven model

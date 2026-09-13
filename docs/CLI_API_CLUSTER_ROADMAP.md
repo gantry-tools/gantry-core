@@ -1,0 +1,177 @@
+# Gantry CLI/API, clustering and propagation roadmap
+
+This is the canonical cross-project campaign for Cortex, Warden, Trestle,
+Watchpost, Watchpost Agent and Webfleet. Product handovers may reference it but
+must not carry drifting copies. Checkpoint status is evidence-based: code,
+tests, documentation and the checkpoint commit are all required.
+
+## Invariants
+
+- Each website operation maps to an authenticated HTTP operation.
+- Each functional HTTP operation that can sensibly be automated maps to a CLI
+  command; browser protocol endpoints such as OAuth callbacks are documented
+  exceptions rather than fake CLI commands.
+- UI, HTTP and CLI adapters call one product-owned service operation.
+- CLI automation has stable JSON, errors, exit codes, non-interactive input,
+  timeouts and secret-redaction behavior.
+- Human authentication remains installation- and product-local.
+- Cluster nodes have independent identities, credentials and audit actors.
+- Standalone mode remains the default and requires no cluster infrastructure.
+- Propagation is never implicit last-write-wins database replication.
+
+## Phase 1 - Shared CLI/API contract
+
+- [ ] **CP1 Functional surface inventory.** Record every functional HTTP route,
+  website consumer and existing CLI command in a machine-readable manifest per
+  project. Classify reads, mutations, destructive operations, secrets,
+  streaming/browser protocols and current coverage gaps.
+- [ ] **CP2 Canonical operation model.** Implement the versioned operation,
+  route, input/output, authorization, audit, idempotency and automation model in
+  Gantry Core, with compatibility fixtures.
+- [ ] **CP3 CLI grammar and behavior.** Implement shared parsing and behavioral
+  contracts for resource/verb commands, JSON/file/stdin input, output modes,
+  quiet operation, confirmations, timeouts and stable exit codes.
+- [ ] **CP4 Authentication and execution contexts.** Model local execution,
+  remote tokens and future node execution without sharing human accounts or
+  allowing one actor type to inherit another's authority.
+- [ ] **CP5 Input, output and error primitives.** Add bounded strict JSON,
+  pagination/filter primitives, structured errors, renderers, confirmations,
+  redaction, request IDs and idempotency keys.
+- [ ] **CP6 Client and command transport.** Add a dependency-light HTTP client
+  and local executor abstraction with TLS, tokens, timeouts, cancellation,
+  pagination, streaming and safe retry classification.
+- [ ] **CP7 Contract-test harness.** Make manifests testable for uniqueness,
+  authorization, route/CLI parity, schemas, redaction and declared exceptions.
+- [ ] **CP8 Cross-project adoption smoke pass.** In every consumer, register and
+  test at least one read, one mutation and one destructive or security-sensitive
+  operation through the shared contract without changing product behavior.
+
+Phase 1 closes only when all consumer suites pass against the local Gantry Core
+checkout and the generated coverage baseline is truthful. It does not claim
+full CLI coverage; Phase 5 closes the measured gaps.
+
+## Phase 2 - Watchpost proves clustering
+
+- [ ] **CP9 Boundaries and topology.** Define server-to-server clustering,
+  ownership and deferred data-replication behavior separately from existing
+  Watchpost-to-Agent pairing.
+- [ ] **CP10 Node identity.** Add stable installation/node IDs, public identity,
+  endpoints, capabilities, versions, lifecycle timestamps and revocation.
+- [ ] **CP11 Pairing ceremony.** Add short-lived single-use invite, join,
+  inspect, approve, reject and replay-safe audit flows in CLI and `/app/`.
+- [ ] **CP12 Authenticated transport.** Add TLS, peer authentication, signed or
+  mutually authenticated requests, nonces, bounded requests and negotiation.
+- [ ] **CP13 Membership and health.** Add member state, last contact, latency,
+  compatibility, disable/remove and credential rotation.
+- [ ] **CP14 First distributed read.** Prove targeted and bounded fan-out health
+  with deterministic per-node and partial-failure results.
+- [ ] **CP15 Watchpost distributed operations.** Add useful aggregate status and
+  explicit ownership without duplicating agents or monitoring work.
+- [ ] **CP16 Cluster UI.** Add pairing, membership, health, rotation, revocation
+  and audit views beside Agent pairing in the Watchpost `/app/` SPA.
+- [ ] **CP17 Failure and recovery.** Test expiry, replay, partition, offline
+  peers, rotation interruption, incompatibility, removal and re-pairing.
+
+## Phase 3 - Extract only the proven model
+
+- [ ] **CP18 Proven-model audit.** Separate generic identity, ceremony,
+  transport and fan-out from Watchpost policy and Agent behavior.
+- [ ] **CP19 Shared cluster domain.** Extract versioned node, membership,
+  invitation, capability, health, target and result contracts behind storage
+  adapters.
+- [ ] **CP20 Shared secure transport.** Extract envelopes, peer authentication,
+  replay protection, limits, retry classification and structured errors.
+- [ ] **CP21 Shared pairing lifecycle.** Extract invite through re-pair while
+  leaving branding, persistence and permissions in consumers.
+- [ ] **CP22 Shared routing and fan-out.** Extract selectors, bounded parallelism,
+  cancellation, idempotency and partial-result aggregation.
+- [ ] **CP23 Shared cluster CLI.** Supply identical `cluster init`, `invite`,
+  `join`, `approve`, `members`, `status`, `rotate`, `revoke` and `remove` forms.
+- [ ] **CP24 Shared UI/API contracts.** Supply common wire shapes and reusable
+  interaction behavior while retaining each product's design.
+- [ ] **CP25 Rebase Watchpost.** Delete its duplicated generic implementation
+  and prove unchanged behavior through Gantry Core.
+- [ ] **CP26 Compatibility and upgrades.** Prove restart persistence, rolling
+  compatible upgrades, fail-closed incompatibility and retained Agent pairs.
+
+## Phase 4 - Trestle and Webfleet adoption
+
+- [ ] **CP27 Trestle cluster adoption.** Integrate shared node, ceremony,
+  membership, transport, health, CLI, UI and audit behavior.
+- [ ] **CP28 Trestle distribution policy.** Classify cluster-readable,
+  propagatable, node-local and authoritative operations without implying record
+  or database replication.
+- [ ] **CP29 Trestle distributed operations.** Add health/version aggregation,
+  targeted administration and schema/config comparison.
+- [ ] **CP30 Webfleet cluster adoption.** Integrate the identical shared model.
+- [ ] **CP31 Webfleet distribution policy.** Classify request, environment,
+  monitor, schedule, secret, result and runtime ownership.
+- [ ] **CP32 Webfleet distributed operations.** Add aggregate health/monitoring,
+  targeted execution, comparison and duplicate-execution prevention.
+- [ ] **CP33 Cross-project parity.** Contract-test identical ceremony, commands,
+  states, selectors, rotation, revocation, audit and cluster UI layout.
+
+## Phase 5 - Complete functional API/CLI coverage
+
+- [ ] **CP34 Authoritative coverage matrices.** Generate UI/API/CLI/permission/
+  schema/test matrices and fail CI on undeclared drift.
+- [ ] **CP35 Cortex completion.** Cover setup, accounts, providers/policy,
+  workspaces, conversations, agent execution, launcher, service and diagnostics.
+- [ ] **CP36 Warden completion.** Cover accounts/security, workspaces/editor,
+  agents, terminals, provider policy, launcher, service and diagnostics.
+- [ ] **CP37 Trestle completion.** Cover database setup, collections, records,
+  auth/access, files, jobs, functions, webhooks, realtime, backups and cluster.
+- [ ] **CP38 Watchpost/Agent completion.** Cover monitors, alerts, agents,
+  telemetry, evidence, lifecycle, pairing, clustering and diagnostics.
+- [ ] **CP39 Webfleet completion.** Cover sites, requests, environments,
+  analytics, monitors, audits, schedules, runs, clustering and diagnostics.
+- [ ] **CP40 Authorization parity.** Prove identical permissions, revocation,
+  policy enforcement, secret masking, confirmations and actor-specific audit.
+- [ ] **CP41 Automation dogfood.** Exercise stdin/files, JSON, pagination,
+  idempotency, expiry, timeouts, partial failure and stable exits through scripts.
+- [ ] **CP42 Public certification.** Publish generated API/CLI references,
+  authentication guidance, automation examples and truthful coverage reports.
+
+## Phase 6 - Configuration and policy propagation
+
+- [ ] **CP43 Propagation envelope.** Define kind, identity, schema version,
+  revision, source, digest, dependencies, secret references, targets, conflict
+  policy, actor and signature.
+- [ ] **CP44 Export/diff/dry-run/apply.** Require exact previews of creates,
+  updates, deletions, incompatibilities, missing dependencies/secrets and denial.
+- [ ] **CP45 Targeting.** Support explicit nodes, groups/labels, capability
+  matching and exclusions; future-node policy is separately explicit.
+- [ ] **CP46 Conflict and ownership.** Implement reject/source/destination/manual
+  and declared merge policies; security policy never silently last-write-wins.
+- [ ] **CP47 Secrets.** Keep ordinary exports secret-free; use references or
+  destination encryption with dedicated permission, masking and audit.
+- [ ] **CP48 Transactions and rollback.** Validate first, sign plans, record
+  revisions, expose partial completion and rollback only declared-safe objects.
+- [ ] **CP49 Product adapters.** Add Watchpost monitor/alert policy, Trestle
+  schema/access/integration definitions and Webfleet request/monitor/schedule
+  definitions before considering Cortex/Warden administrative policy.
+- [ ] **CP50 Propagation UI.** Add selection, targets, diff, compatibility,
+  confirmation, per-node progress, retry/rollback and history to `/app/`.
+- [ ] **CP51 Scheduled reconciliation.** Only after manual dogfood, add saved
+  profiles, drift detection, notify-only, schedules and approval requirements.
+- [ ] **CP52 Adversarial recovery.** Test partitions, restarts, stale revisions,
+  concurrent edits, invalid schemas, absent secrets, revocation and rollback.
+- [ ] **CP53 Final certification.** Prove fresh and upgraded three-node clusters,
+  rolling upgrades, credential lifecycle, propagation, recovery, isolation and
+  UI/API/CLI parity.
+
+## Checkpoint discipline
+
+At each checkpoint:
+
+1. Re-read this roadmap and the affected product handover.
+2. Confirm the next checkpoint is still the smallest coherent dependency step.
+3. Update compatibility fixtures before or with changed shared behavior.
+4. Run focused tests, `go test ./...`, `go test -race ./...`, `go vet ./...`,
+   `git diff --check`, and the affected local-workspace consumer suites.
+5. Update this file with status, evidence and any justified reordering.
+6. Commit the checkpoint independently and report its exact commit.
+
+Do not mark a future checkpoint complete merely because an abstraction appears
+capable of supporting it. Do not silently delete obligations discovered to be
+larger than expected; split or revise them explicitly.

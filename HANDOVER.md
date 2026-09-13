@@ -9,6 +9,28 @@ have at least two plausible consumers. A package must not import an application.
 
 Changes to shared behavior must update fixtures first, pass `go test ./...` and `go test -race ./...`, and then pass the Cortex and Warden suites against the local module replacement. Compatibility fixtures are contracts: add cases rather than silently changing established outcomes.
 
+## CLI/API and distributed-management campaign
+
+`docs/CLI_API_CLUSTER_ROADMAP.md` is the canonical execution plan for making
+every Gantry Go application fully operable through its HTTP API and CLI, then
+adding clustering and controlled configuration propagation. Work through its
+checkpoints in order. Commit each checkpoint independently after its focused
+acceptance gate, reassess the remaining order after every checkpoint, and edit
+the roadmap rather than silently departing from it.
+
+The campaign's architectural boundaries are mandatory:
+
+- human accounts, roles, sessions and API tokens remain local to one product
+  installation; Gantry Core supplies contracts, not a shared Gantry login;
+- cluster peers use separate node/service identities and never impersonate a
+  human account;
+- website, HTTP API and CLI entry points authorize and invoke the same product
+  service operation instead of reimplementing business logic;
+- Watchpost proves clustering locally before generic cluster code is extracted;
+- propagation is explicit, versioned, diffable and audited configuration or
+  policy distribution, not hidden database replication; and
+- standalone installations remain fully supported throughout the campaign.
+
 ## Release state
 
 - Released stable: **v0.1.0** (stable public preview).

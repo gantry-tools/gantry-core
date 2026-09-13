@@ -12,6 +12,7 @@ Changes to shared behavior must update fixtures first, pass `go test ./...` and 
 ## Release state
 
 - Released stable: **v0.1.0** (stable public preview).
+- Current development: **0.1.1** on `main`.
 - Consumers should pin stable semantic versions rather than unpublished pseudo-versions.
 
 ## Release procedure

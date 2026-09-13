@@ -36,6 +36,7 @@ const (
 	Automatable       Automation = "automatable"
 	BrowserProtocol   Automation = "browser-protocol"
 	StreamingProtocol Automation = "streaming-protocol"
+	ServiceProtocol   Automation = "service-protocol"
 )
 
 type Route struct {
@@ -125,7 +126,7 @@ func (c Contract) Validate() error {
 	if c.Idempotency.RetrySafe && !c.Idempotency.Supported && c.Kind != Read {
 		return fmt.Errorf("operation %q: mutation cannot be retry-safe without idempotency", c.ID)
 	}
-	if c.Automation != Automatable && c.Automation != BrowserProtocol && c.Automation != StreamingProtocol {
+	if c.Automation != Automatable && c.Automation != BrowserProtocol && c.Automation != StreamingProtocol && c.Automation != ServiceProtocol {
 		return fmt.Errorf("operation %q: invalid automation classification %q", c.ID, c.Automation)
 	}
 	if err := validatePointers(append(append([]string{}, c.SecretInputs...), c.SecretOutputs...)); err != nil {

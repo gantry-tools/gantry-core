@@ -23,6 +23,7 @@ type Profile struct {
 	Schedule          string        `json:"schedule,omitempty"`
 	MaintenanceWindow string        `json:"maintenance_window,omitempty"`
 	Enabled           bool          `json:"enabled"`
+	LastRunAt         *time.Time    `json:"last_run_at,omitempty"`
 }
 type Drift struct {
 	Kind           string `json:"kind"`

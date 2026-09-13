@@ -1,0 +1,381 @@
+{
+  "schema_version": 1,
+  "project": "cortex",
+  "repository": "crtx-dev/cortex",
+  "evidence": [
+    "content/index.html",
+    "internal/app/routes.go",
+    "public/assets/js/launcher.js",
+    "public/assets/js/manage.js",
+    "public/assets/js/script.js",
+    "public/index.html"
+  ],
+  "cli_commands": [
+    "activating",
+    "active",
+    "config",
+    "disabled",
+    "enabled",
+    "enabled-runtime",
+    "inactive",
+    "install",
+    "is-active",
+    "is-enabled",
+    "logs",
+    "masked",
+    "not-found",
+    "refreshing",
+    "reloading",
+    "reset",
+    "serve",
+    "service",
+    "setup",
+    "start",
+    "static",
+    "status",
+    "uninstall",
+    "unknown",
+    "version"
+  ],
+  "endpoints": [
+    {
+      "method": "ANY",
+      "path": "/api/agent/cancel",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/agent/image",
+      "sources": [
+        "internal/app/routes.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/agent/models",
+      "sources": [
+        "internal/app/routes.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/agent/run",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/agent/run-diagnostics",
+      "sources": [
+        "internal/app/routes.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/agent/status",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/auth/google",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/auth/google/callback",
+      "sources": [
+        "internal/app/auth.go",
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "browser-or-protocol-exception"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/auth/google/start",
+      "sources": [
+        "content/index.html",
+        "internal/app/routes.go",
+        "public/index.html"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/auth/login",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/auth/logout",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/auth/password",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/auth/setup",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/auth/state",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/launcher.js",
+        "public/assets/js/manage.js",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/auth/totp/begin",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/auth/totp/disable",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/auth/totp/enable",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/conversation",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/conversations",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/file",
+      "sources": [
+        "internal/app/routes.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/files",
+      "sources": [
+        "internal/app/routes.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/health",
+      "sources": [
+        "cmd/cortex/service.go",
+        "internal/app/routes.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/launcher/config",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/launcher.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/launcher/instances",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/launcher.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/manage/roles",
+      "sources": [
+        "internal/app/routes.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/manage/users",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/manage.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/settings",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/status",
+      "sources": [
+        "internal/app/routes.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    }
+  ],
+  "notes": [
+    "ANY means the current registration or handler does not declare one immutable method in a scanner-readable form.",
+    "CLI=false is the conservative Phase 1 baseline; CP8 registers proven shared operations and Phase 5 closes all functional gaps.",
+    "Browser/protocol exceptions remain HTTP operations but do not require artificial CLI wrappers."
+  ]
+}

@@ -21,7 +21,7 @@ tests, documentation and the checkpoint commit are all required.
 
 ## Phase 1 - Shared CLI/API contract
 
-- [ ] **CP1 Functional surface inventory.** Record every functional HTTP route,
+- [x] **CP1 Functional surface inventory.** Record every functional HTTP route,
   website consumer and existing CLI command in a machine-readable manifest per
   project. Classify reads, mutations, destructive operations, secrets,
   streaming/browser protocols and current coverage gaps.
@@ -49,6 +49,12 @@ tests, documentation and the checkpoint commit are all required.
 Phase 1 closes only when all consumer suites pass against the local Gantry Core
 checkout and the generated coverage baseline is truthful. It does not claim
 full CLI coverage; Phase 5 closes the measured gaps.
+
+CP1 evidence: `cmd/surface-inventory` and `docs/inventory/*.json`. The scanner
+records exact method-qualified registrations where present, marks older dynamic
+handler registrations `ANY`, and conservatively leaves CLI coverage false until
+an executable operation declaration proves it. This preserves gaps rather than
+converting source-code guesses into certification.
 
 ## Phase 2 - Watchpost proves clustering
 

@@ -1,0 +1,668 @@
+{
+  "schema_version": 1,
+  "project": "trestle",
+  "repository": "trestle-cv/trestle",
+  "evidence": [
+    "internal/server/server.go",
+    "internal/web/public/assets/js/launcher.js",
+    "internal/web/public/assets/js/manage.js",
+    "internal/web/public/assets/js/script.js"
+  ],
+  "cli_commands": [
+    "disable",
+    "enable",
+    "install",
+    "logs",
+    "restart",
+    "rollback",
+    "start",
+    "status",
+    "stop",
+    "uninstall",
+    "update"
+  ],
+  "endpoints": [
+    {
+      "method": "ANY",
+      "path": "/admin/v1/api/schema",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/apidocs/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/app-registration",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/appauth/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/app-registration/activation-base-url",
+      "sources": [
+        "internal/appauth/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/app-registration/invitations",
+      "sources": [
+        "internal/appauth/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/app-registration/policy",
+      "sources": [
+        "internal/appauth/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/app-registration/requests",
+      "sources": [
+        "internal/appauth/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/app-users",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/appauth/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/audit",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/audit/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/backups",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/backup/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/collections",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/collections/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/credentials",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/identities/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/database/setup",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/deployment",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/deployment/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/events",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/events/handler.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/export",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/backup/handler.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/files",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/files/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/files/cleanup",
+      "sources": [
+        "internal/files/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/functions",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/functions/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/imports/dry-run",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/backup/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/jobs",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/jobs/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/manage/roles",
+      "sources": [
+        "internal/adminauth/handler.go",
+        "internal/web/public/assets/js/manage.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/manage/users",
+      "sources": [
+        "internal/adminauth/handler.go",
+        "internal/web/public/assets/js/manage.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/operations",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/audit/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/password",
+      "sources": [
+        "internal/adminauth/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/restores/preflight",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/backup/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/session",
+      "sources": [
+        "internal/adminauth/handler.go",
+        "internal/web/public/assets/js/launcher.js",
+        "internal/web/public/assets/js/manage.js",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/setup",
+      "sources": [
+        "internal/adminauth/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/setup/status",
+      "sources": [
+        "internal/adminauth/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/storage/status",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/files/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/support-bundle",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/deployment/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/admin/v1/webhooks",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/web/public/assets/js/script.js",
+        "internal/webhooks/handler.go"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/launcher/config",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/web/public/assets/js/launcher.js",
+        "internal/web/public/assets/js/manage.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/launcher/instances",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/web/public/assets/js/launcher.js",
+        "internal/web/public/assets/js/manage.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/v1/auth/access-request",
+      "sources": [
+        "internal/appauth/handler.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/v1/auth/capability",
+      "sources": [
+        "internal/appauth/handler.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/v1/auth/invite/accept",
+      "sources": [
+        "internal/appauth/handler.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/v1/auth/login",
+      "sources": [
+        "internal/appauth/handler.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/v1/auth/logout",
+      "sources": [
+        "internal/appauth/handler.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/v1/auth/refresh",
+      "sources": [
+        "internal/appauth/handler.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/v1/auth/register",
+      "sources": [
+        "internal/appauth/handler.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/v1/capabilities",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/apidocs/handler.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/v1/collections/{collection}/records",
+      "sources": [
+        "internal/apidocs/handler.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/v1/collections/{collection}/records/{id}",
+      "sources": [
+        "internal/apidocs/handler.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/v1/files",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/apidocs/handler.go",
+        "internal/files/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/v1/openapi.json",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/apidocs/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/v1/realtime",
+      "sources": [
+        "cmd/trestle/main.go",
+        "internal/apidocs/handler.go",
+        "internal/events/handler.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/app",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/healthz",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/manage",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/system/health",
+      "sources": [
+        "internal/server/server.go",
+        "internal/service/service.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/system/ready",
+      "sources": [
+        "internal/server/server.go",
+        "internal/web/public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/system/version",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    }
+  ],
+  "notes": [
+    "ANY means the current registration or handler does not declare one immutable method in a scanner-readable form.",
+    "CLI=false is the conservative Phase 1 baseline; CP8 registers proven shared operations and Phase 5 closes all functional gaps.",
+    "Browser/protocol exceptions remain HTTP operations but do not require artificial CLI wrappers."
+  ]
+}

@@ -1,0 +1,335 @@
+{
+  "schema_version": 1,
+  "project": "watchpost-agent",
+  "repository": "watchpost-cv/watchpost-agent",
+  "evidence": [
+    "internal/app/app.go",
+    "public/assets/js/script.js",
+    "public/launcher.js",
+    "public/manage.js"
+  ],
+  "cli_commands": [
+    "configure",
+    "disable",
+    "enable",
+    "info",
+    "install",
+    "logs",
+    "pair",
+    "pair-status",
+    "restart",
+    "rollback",
+    "rotate",
+    "setup",
+    "start",
+    "status",
+    "stop",
+    "uninstall",
+    "unpair",
+    "update"
+  ],
+  "endpoints": [
+    {
+      "method": "ANY",
+      "path": "/api/agent/v2/pairing-requests",
+      "sources": [
+        "internal/pairing/pairing.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/agent/v2/rotate",
+      "sources": [
+        "internal/pairing/pairing.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/agent/v2/unpair",
+      "sources": [
+        "internal/pairing/pairing.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "destructive",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/collector/v1/observations",
+      "sources": [
+        "internal/telemetry/telemetry.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/launcher/config",
+      "sources": [
+        "internal/app/app.go",
+        "public/launcher.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/launcher/instances",
+      "sources": [
+        "internal/app/app.go",
+        "public/launcher.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/accounts",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js",
+        "public/manage.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounts",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js",
+        "public/manage.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/accounts/{id}/revoke-sessions",
+      "sources": [
+        "internal/app/app.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "destructive",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/audit",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/bootstrap",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js",
+        "public/launcher.js",
+        "public/manage.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/collectors",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/collectors",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/login",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/logout",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/me/password",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/pairing/poll",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/pairing/request",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/reset",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "destructive",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/rotate",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/setup",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/status",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/unpair",
+      "sources": [
+        "internal/app/app.go",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "destructive",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/healthz",
+      "sources": [
+        "internal/app/app.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/readyz",
+      "sources": [
+        "internal/app/app.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    }
+  ],
+  "notes": [
+    "ANY means the current registration or handler does not declare one immutable method in a scanner-readable form.",
+    "CLI=false is the conservative Phase 1 baseline; CP8 registers proven shared operations and Phase 5 closes all functional gaps.",
+    "Browser/protocol exceptions remain HTTP operations but do not require artificial CLI wrappers."
+  ]
+}

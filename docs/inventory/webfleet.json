@@ -1,0 +1,701 @@
+{
+  "schema_version": 1,
+  "project": "webfleet",
+  "repository": "webfleet-cv/webfleet",
+  "evidence": [
+    "internal/server/server.go",
+    "internal/server/web/assets/js/script.js",
+    "internal/server/web/launcher.js",
+    "internal/server/web/manage.js",
+    "public/assets/js/script.js",
+    "public/launcher.js",
+    "public/manage.js"
+  ],
+  "cli_commands": [
+    "disable",
+    "enable",
+    "install",
+    "logs",
+    "restart",
+    "rollback",
+    "serve",
+    "start",
+    "status",
+    "stop",
+    "uninstall",
+    "update"
+  ],
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/analytics/event",
+      "sources": [
+        "internal/analytics/analytics.go",
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "browser-or-protocol-exception"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/analytics/geo/update",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/assets/js/script.js",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/audits/batch",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/assets/js/script.js",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/audits/resolve",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/assets/js/script.js",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/fleet",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/assets/js/script.js",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/fleet/analytics",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/fleet/link-regressions",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/assets/js/script.js",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/fleet/tls",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/groups",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/assets/js/script.js",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/incidents/{id}/ack",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/launcher/config",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/launcher.js",
+        "public/launcher.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/launcher/instances",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/launcher.js",
+        "public/launcher.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/login",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/assets/js/script.js",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/logout",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/assets/js/script.js",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/maintenance",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/maintenance/run",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/me/password",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/assets/js/script.js",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/notifications/deliveries",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/notifications/webhooks",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/oidc/callback",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "browser-or-protocol-exception"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/oidc/config",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/oidc/login",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/organization/members",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/manage.js",
+        "public/manage.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/session",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/assets/js/script.js",
+        "internal/server/web/launcher.js",
+        "internal/server/web/manage.js",
+        "public/assets/js/script.js",
+        "public/launcher.js",
+        "public/manage.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/setup",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/assets/js/script.js",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/setup/database",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/assets/js/script.js",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/setup/status",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/assets/js/script.js",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites",
+      "sources": [
+        "internal/server/server.go",
+        "internal/server/web/assets/js/script.js",
+        "public/assets/js/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/analytics",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/analytics/countries",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/analytics/disable",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/analytics/goals",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/analytics/pages",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/analytics/summary",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/archive",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/audit",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/audit/history",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/check",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/checks",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/crawl",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/deployments",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/deployments/correlation",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/dns",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/dns/observe",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/header-expectations",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/http-observations",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/incidents",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/performance",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/tags",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/tls",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/sites/{id}/tls/inspect",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/tokens",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "ANY",
+      "path": "/api/tokens/{id}",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "unresolved",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/healthz",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/manage/",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/wf.js",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    }
+  ],
+  "notes": [
+    "ANY means the current registration or handler does not declare one immutable method in a scanner-readable form.",
+    "CLI=false is the conservative Phase 1 baseline; CP8 registers proven shared operations and Phase 5 closes all functional gaps.",
+    "Browser/protocol exceptions remain HTTP operations but do not require artificial CLI wrappers."
+  ]
+}

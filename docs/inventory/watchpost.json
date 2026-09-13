@@ -1,0 +1,959 @@
+{
+  "schema_version": 1,
+  "project": "watchpost",
+  "repository": "watchpost-cv/watchpost",
+  "evidence": [
+    "internal/server/api.go",
+    "internal/server/server.go",
+    "web/content/manage.js",
+    "web/dist/launcher.js",
+    "web/dist/manage.js",
+    "web/dist/script.js"
+  ],
+  "cli_commands": [
+    "backup",
+    "disable",
+    "enable",
+    "install",
+    "logs",
+    "rekey",
+    "restart",
+    "restore",
+    "rollback",
+    "start",
+    "status",
+    "stop",
+    "uninstall",
+    "update"
+  ],
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/agent/v2/pairing-requests",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agent/v2/pairing-requests/{id}",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/v2/rotate",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agent/v2/unpair",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "destructive",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/collector/v1/observations",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/collector/v1/pair",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/launcher/config",
+      "sources": [
+        "internal/server/server.go",
+        "web/dist/launcher.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/launcher/instances",
+      "sources": [
+        "internal/server/server.go",
+        "web/dist/launcher.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/actions",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/actions",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/actions/{id}/approve",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/actions/{id}/execute",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agent-connections",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agent-connections/{id}/revoke",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "destructive",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/agent-pairing-requests",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agent-pairing-requests/{id}/approve",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/agent-pairing-requests/{id}/reject",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/alerts",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/alerts/{id}/acknowledge",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/audit",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/backup-status",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/bootstrap",
+      "sources": [
+        "internal/server/api.go",
+        "web/content/manage.js",
+        "web/dist/launcher.js",
+        "web/dist/manage.js",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/changes",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/check-schedules",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/check-schedules",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/checks",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/collectors",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/conversations",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/conversations/{id}/investigate",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/device-adapters",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/device-presets",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "destructive",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/device-profiles",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/device-profiles",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/device-profiles/{id}",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "destructive",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/devices/snmp/poll",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/diagnostics",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/evidence/{kind}/{id}",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/federation/{peer}",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/host-snapshot",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/incidents",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/incidents",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/incidents/{id}",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/incidents/{id}/assign",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/incidents/{id}/notes",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/incidents/{id}/transition",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/login",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/logout",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/logs",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/me/password",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/notification-routes",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/notification-routes",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/observations",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/peers",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/peers",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/peers/{id}/revoke",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "destructive",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/posts",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/posts",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/posts/{id}",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "destructive",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/posts/{id}",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/posts/{id}",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/posts/{id}/agent-connections",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/posts/{id}/collectors",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/posts/{id}/dependencies",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/posts/{id}/history",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/posts/{id}/logs",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/posts/{id}/pairing-tokens",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/rules",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/rules",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/rules/{id}/enabled",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/setup",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/storage",
+      "sources": [
+        "internal/server/server.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/survey",
+      "sources": [
+        "internal/server/api.go",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users",
+      "sources": [
+        "internal/server/api.go",
+        "web/content/manage.js",
+        "web/dist/manage.js",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users",
+      "sources": [
+        "internal/server/api.go",
+        "web/content/manage.js",
+        "web/dist/manage.js",
+        "web/dist/script.js"
+      ],
+      "website_consumer": true,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/{id}/reset-password",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "destructive",
+      "automation": "missing"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/{id}/revoke-sessions",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "destructive",
+      "automation": "missing"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/users/{id}/role",
+      "sources": [
+        "internal/server/api.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "mutation",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/version",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/healthz",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    },
+    {
+      "method": "GET",
+      "path": "/readyz",
+      "sources": [
+        "internal/server/server.go"
+      ],
+      "website_consumer": false,
+      "cli": false,
+      "classification": "read",
+      "automation": "missing"
+    }
+  ],
+  "notes": [
+    "ANY means the current registration or handler does not declare one immutable method in a scanner-readable form.",
+    "CLI=false is the conservative Phase 1 baseline; CP8 registers proven shared operations and Phase 5 closes all functional gaps.",
+    "Browser/protocol exceptions remain HTTP operations but do not require artificial CLI wrappers."
+  ]
+}

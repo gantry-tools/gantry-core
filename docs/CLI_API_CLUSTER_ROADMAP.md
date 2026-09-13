@@ -104,7 +104,7 @@ cluster abstractions can be designed without guessing.
 
 ## Phase 2 - Watchpost proves clustering
 
-- [ ] **CP9 Boundaries and topology.** Define server-to-server clustering,
+- [x] **CP9 Boundaries and topology.** Define server-to-server clustering,
   ownership and deferred data-replication behavior separately from existing
   Watchpost-to-Agent pairing.
 - [ ] **CP10 Node identity.** Add stable installation/node IDs, public identity,

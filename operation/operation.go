@@ -88,8 +88,9 @@ type Contract struct {
 }
 
 var (
-	idPattern   = regexp.MustCompile(`^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$`)
-	wordPattern = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
+	idPattern    = regexp.MustCompile(`^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$`)
+	wordPattern  = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
+	scopePattern = regexp.MustCompile(`^[a-z][a-z0-9.-]*(?::[a-z][a-z0-9.-]*)*$`)
 )
 
 func (c Contract) Validate() error {
@@ -161,7 +162,7 @@ func validateAuthorization(auth Authorization) error {
 		return fmt.Errorf("invalid authorization boundary %q", auth.Boundary)
 	}
 	for _, scope := range auth.TokenScopes {
-		if !wordPattern.MatchString(scope) && !idPattern.MatchString(scope) {
+		if !scopePattern.MatchString(scope) {
 			return fmt.Errorf("invalid token scope %q", scope)
 		}
 	}

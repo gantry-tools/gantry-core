@@ -75,3 +75,10 @@ func TestHumanAndNodeBoundariesStayDistinct(t *testing.T) {
 		t.Fatal("cluster node must not inherit a human capability")
 	}
 }
+
+func TestContractAcceptsColonSeparatedTokenScope(t *testing.T) {
+	c := Contract{SchemaVersion: SchemaVersion, ID: "test.items.list", Kind: Read, Route: Route{Method: "GET", Path: "/items"}, CLI: &CLI{Resource: "items", Verb: "list", Implemented: true}, Authorization: Authorization{Boundary: Session, TokenScopes: []string{"sites:read"}}, Schemas: Schemas{Output: "items.response.v1"}, Idempotency: Idempotency{RetrySafe: true}, Automation: Automatable}
+	if err := c.Validate(); err != nil {
+		t.Fatal(err)
+	}
+}

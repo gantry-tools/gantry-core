@@ -2,6 +2,8 @@
 
 Shared, dependency-light Go building blocks extracted from Cortex and Warden.
 
+The current stable public-preview release is **v0.1.0**.
+
 | Package | Owns | Does not own |
 | --- | --- | --- |
 | `agent` | run-state ordering, outcomes, recovery reconciliation | providers, subprocess launch, HTTP streaming |
@@ -51,4 +53,4 @@ paths. The script intentionally tests all consumers against this checkout throug
 temporary workspace module replacements, so unpublished changes exercise the
 complete dogfood set without editing any consumer's reproducible module pin.
 
-Consumers use normal Go imports such as `github.com/gantry-tools/gantry-core/conversations`. Each consumer pins an exact Gantry Core revision so its build remains reproducible from a standalone clone.
+Consumers use normal Go imports such as `github.com/gantry-tools/gantry-core/conversations`. Each consumer pins an exact Gantry Core release so its build remains reproducible from a standalone clone.

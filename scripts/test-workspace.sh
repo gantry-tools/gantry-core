@@ -13,6 +13,24 @@ for consumer_dir in "$cortex_dir" "$warden_dir" "$trestle_dir" "$watchpost_dir" 
 	test -f "$consumer_dir/go.mod"
 done
 
+# Keep every Gantry module on one explicit toolchain baseline. A mixed baseline
+# makes local workspaces, CI and release packaging harder to reason about and
+# can silently reintroduce older dependency constraints.
+for module_file in \
+	"$repo_dir/go.mod" \
+	"$cortex_dir/go.mod" \
+	"$warden_dir/go.mod" \
+	"$trestle_dir/go.mod" \
+	"$watchpost_dir/go.mod" \
+	"$watchpost_agent_dir/go.mod" \
+	"$webfleet_dir/go.mod"; do
+	go_directive=$(awk '$1 == "go" { print $2; exit }' "$module_file")
+	if [ "$go_directive" != "1.25.0" ]; then
+		echo "$module_file must declare go 1.25.0 (found ${go_directive:-missing})" >&2
+		exit 1
+	fi
+done
+
 cortex_dir=$(CDPATH= cd -- "$cortex_dir" && pwd)
 warden_dir=$(CDPATH= cd -- "$warden_dir" && pwd)
 trestle_dir=$(CDPATH= cd -- "$trestle_dir" && pwd)

@@ -2,6 +2,7 @@ package automation
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -95,5 +96,39 @@ func TestIdempotencyKeyUsesRequestID(t *testing.T) {
 	code := Run([]string{"items", "create", "--request-id", "req-123"}, contracts, Options{Program: "demo", DefaultURL: s.URL, Stdout: &strings.Builder{}, Stderr: &strings.Builder{}})
 	if code != 0 || got != "req-123" {
 		t.Fatalf("code=%d key=%q", code, got)
+	}
+}
+
+func TestAutomationInputQueryConfirmationAndTimeout(t *testing.T) {
+	var query, body string
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		query = r.URL.Query().Get("page")
+		b, _ := io.ReadAll(r.Body)
+		body = string(b)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer s.Close()
+	c := operation.Contract{SchemaVersion: 1, ID: "demo.items.delete", Kind: operation.Destructive, Route: operation.Route{Method: "DELETE", Path: "/items/{id}"}, CLI: &operation.CLI{Resource: "items", Verb: "delete", Implemented: true}, Authorization: operation.Authorization{Boundary: operation.Public}, Schemas: operation.Schemas{Input: "items.request.v1", Output: "items.response.v1"}, Audit: operation.Audit{Required: true, Event: "demo.items.deleted"}, Automation: operation.Automatable}
+	errOut := &strings.Builder{}
+	if code := Run([]string{"items", "delete", "7"}, []operation.Contract{c}, Options{Program: "demo", DefaultURL: s.URL, Stderr: errOut}); code != cli.ExitUsage {
+		t.Fatalf("unconfirmed code=%d", code)
+	}
+	if !strings.Contains(errOut.String(), "requires --yes") {
+		t.Fatalf("stderr=%q", errOut.String())
+	}
+	in := strings.NewReader(`{"reason":"cleanup"}`)
+	if code := Run([]string{"items", "delete", "7", "--yes", "--input", "-", "--query", "page=2", "--timeout", "2s", "--json"}, []operation.Contract{c}, Options{Program: "demo", DefaultURL: s.URL, Stdin: in, Stdout: &strings.Builder{}, Stderr: &strings.Builder{}}); code != 0 {
+		t.Fatalf("code=%d", code)
+	}
+	if query != "2" || body != `{"reason":"cleanup"}` {
+		t.Fatalf("query=%q body=%q", query, body)
+	}
+}
+
+func TestAutomationNetworkFailureIsUnavailable(t *testing.T) {
+	c := operation.Contract{SchemaVersion: 1, ID: "demo.items.list", Kind: operation.Read, Route: operation.Route{Method: "GET", Path: "/items"}, CLI: &operation.CLI{Resource: "items", Verb: "list", Implemented: true}, Authorization: operation.Authorization{Boundary: operation.Public}, Schemas: operation.Schemas{Output: "items.response.v1"}, Idempotency: operation.Idempotency{RetrySafe: true}, Automation: operation.Automatable}
+	if code := Run([]string{"items", "list", "--timeout", "10ms"}, []operation.Contract{c}, Options{Program: "demo", DefaultURL: "http://127.0.0.1:1", Stdout: &strings.Builder{}, Stderr: &strings.Builder{}}); code != cli.ExitUnavailable {
+		t.Fatalf("code=%d", code)
 	}
 }

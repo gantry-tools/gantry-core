@@ -12,6 +12,7 @@ The current stable public-preview release is **v0.1.0**.
 | `editor` | text matching, binary detection, replacement and atomic writes | tabs, browser state, workspace authorization |
 | `terminal` | session validation/defaults and bounded UTF-8 scrollback | PTY/WebSocket implementation, persistence, authorization |
 | `auth` | account contracts, capabilities, password hashing, sessions, CSRF and audit normalization | product policy, OAuth/TOTP providers, migrations, management UI |
+| `operation` | versioned HTTP/CLI/authorization/schema/audit contracts and uniqueness registry | product handlers, persistence, UI and policy |
 
 Cross-product conventions are documented separately from executable packages.
 See [Gantry application routing and authentication convention](docs/ROUTING_AND_AUTH.md)

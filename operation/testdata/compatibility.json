@@ -1,0 +1,37 @@
+[
+  {
+    "schema_version": 1,
+    "id": "accounts.delete",
+    "kind": "destructive",
+    "route": {"method": "DELETE", "path": "/api/accounts/{id}"},
+    "cli": {"resource": "accounts", "verb": "delete"},
+    "authorization": {"boundary": "capability", "capability": "accounts.manage"},
+    "schemas": {"output": "gantry://schemas/result/v1"},
+    "audit": {"event": "accounts.delete", "required": true},
+    "idempotency": {"supported": true, "required": true, "retry_safe": true},
+    "automation": "automatable"
+  },
+  {
+    "schema_version": 1,
+    "id": "accounts.list",
+    "kind": "read",
+    "route": {"method": "GET", "path": "/api/accounts"},
+    "cli": {"resource": "accounts", "verb": "list"},
+    "authorization": {"boundary": "capability", "capability": "accounts.read", "token_scopes": ["accounts.read"]},
+    "schemas": {"output": "gantry://schemas/accounts/list/v1"},
+    "audit": {"required": false},
+    "idempotency": {"supported": false, "required": false, "retry_safe": true},
+    "automation": "automatable"
+  },
+  {
+    "schema_version": 1,
+    "id": "auth.oauth.callback",
+    "kind": "read",
+    "route": {"method": "GET", "path": "/api/oauth/callback"},
+    "authorization": {"boundary": "public"},
+    "schemas": {},
+    "audit": {"required": false},
+    "idempotency": {"supported": false, "required": false, "retry_safe": false},
+    "automation": "browser-protocol"
+  }
+]

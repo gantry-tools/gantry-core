@@ -25,7 +25,7 @@ tests, documentation and the checkpoint commit are all required.
   website consumer and existing CLI command in a machine-readable manifest per
   project. Classify reads, mutations, destructive operations, secrets,
   streaming/browser protocols and current coverage gaps.
-- [ ] **CP2 Canonical operation model.** Implement the versioned operation,
+- [x] **CP2 Canonical operation model.** Implement the versioned operation,
   route, input/output, authorization, audit, idempotency and automation model in
   Gantry Core, with compatibility fixtures.
 - [ ] **CP3 CLI grammar and behavior.** Implement shared parsing and behavioral
@@ -55,6 +55,11 @@ records exact method-qualified registrations where present, marks older dynamic
 handler registrations `ANY`, and conservatively leaves CLI coverage false until
 an executable operation declaration proves it. This preserves gaps rather than
 converting source-code guesses into certification.
+
+CP2 evidence: the `operation` package and its compatibility fixture. A registry
+rejects duplicate IDs, routes and CLI mappings; automatable operations require
+a CLI mapping; mutations require audit; retry safety is explicit; and node
+authorization cannot inherit a human capability.
 
 ## Phase 2 - Watchpost proves clustering
 

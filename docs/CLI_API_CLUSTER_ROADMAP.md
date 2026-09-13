@@ -37,7 +37,7 @@ tests, documentation and the checkpoint commit are all required.
 - [x] **CP5 Input, output and error primitives.** Add bounded strict JSON,
   pagination/filter primitives, structured errors, renderers, confirmations,
   redaction, request IDs and idempotency keys.
-- [ ] **CP6 Client and command transport.** Add a dependency-light HTTP client
+- [x] **CP6 Client and command transport.** Add a dependency-light HTTP client
   and local executor abstraction with TLS, tokens, timeouts, cancellation,
   pagination, streaming and safe retry classification.
 - [ ] **CP7 Contract-test harness.** Make manifests testable for uniqueness,
@@ -76,6 +76,11 @@ CP5 evidence: the `protocol` package. Strict decoding is size-bounded and
 rejects unknown/trailing input; structured errors map consistently to HTTP and
 CLI; pagination, exact confirmation, request/idempotency keys, deep-copy secret
 redaction and deterministic output modes have focused tests.
+
+CP6 evidence: the `client` package. HTTP and local execution consume the same
+operation contract; remote calls are bounded, cancellable and credential-source
+driven; token files must be private; route variables are escaped; and retries
+are limited to reads or explicitly idempotent keyed mutations.
 
 ## Phase 2 - Watchpost proves clustering
 

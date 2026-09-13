@@ -15,6 +15,7 @@ The current stable public-preview release is **v0.1.0**.
 | `operation` | versioned HTTP/CLI/authorization/schema/audit contracts and uniqueness registry | product handlers, persistence, UI and policy |
 | `cli` | shared resource/verb parsing, automation options and stable exit codes | product commands, credentials, transport and business logic |
 | `protocol` | bounded JSON, structured errors, pagination, confirmation, redaction and output rendering | product schemas, policy and persistence |
+| `client` | local execution and bounded authenticated HTTP calls with conservative retry rules | product handlers, token issuance, persistence and cluster transport |
 
 Cross-product conventions are documented separately from executable packages.
 See [Gantry application routing and authentication convention](docs/ROUTING_AND_AUTH.md)

@@ -150,20 +150,22 @@ Phase 2 implementation status: CP9-CP17 are implemented locally in Watchpost. Fu
 
 ## Phase 4 - Trestle and Webfleet adoption
 
-- [ ] **CP27 Trestle cluster adoption.** Integrate shared node, ceremony,
+- [x] **CP27 Trestle cluster adoption.** Integrate shared node, ceremony,
   membership, transport, health, CLI, UI and audit behavior.
-- [ ] **CP28 Trestle distribution policy.** Classify cluster-readable,
+- [x] **CP28 Trestle distribution policy.** Classify cluster-readable,
   propagatable, node-local and authoritative operations without implying record
   or database replication.
-- [ ] **CP29 Trestle distributed operations.** Add health/version aggregation,
+- [x] **CP29 Trestle distributed operations.** Add health/version aggregation,
   targeted administration and schema/config comparison.
-- [ ] **CP30 Webfleet cluster adoption.** Integrate the identical shared model.
-- [ ] **CP31 Webfleet distribution policy.** Classify request, environment,
+- [x] **CP30 Webfleet cluster adoption.** Integrate the identical shared model.
+- [x] **CP31 Webfleet distribution policy.** Classify request, environment,
   monitor, schedule, secret, result and runtime ownership.
-- [ ] **CP32 Webfleet distributed operations.** Add aggregate health/monitoring,
+- [x] **CP32 Webfleet distributed operations.** Add aggregate health/monitoring,
   targeted execution, comparison and duplicate-execution prevention.
-- [ ] **CP33 Cross-project parity.** Contract-test identical ceremony, commands,
+- [x] **CP33 Cross-project parity.** Contract-test identical ceremony, commands,
   states, selectors, rotation, revocation, audit and cluster UI layout.
+
+Phase 4 acceptance: Watchpost, Trestle, and Webfleet now share the Gantry cluster lifecycle and selector/result contracts while retaining product-local storage and policy. Standalone mode remains valid; cluster removal does not imply data migration; no database replication or configuration propagation is claimed.
 
 ## Phase 5 - Complete functional API/CLI coverage
 

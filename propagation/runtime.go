@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 )
 
 type KindDescriptor struct {
@@ -85,13 +86,19 @@ func ApplyLocal(ctx context.Context, a LocalAdapter, source []Envelope, actor Ac
 		if err != nil {
 			out.Error = err.Error()
 			for i := len(applied) - 1; i >= 0; i-- {
-				if s, ok := before[applied[i]]; ok && s.Reversible {
-					if rb := a.Restore(ctx, s); rb != nil {
-						out.Error += "; rollback " + applied[i] + ": " + rb.Error()
-						continue
-					}
-					out.RolledBack = true
+				state, ok := before[applied[i]]
+				if !ok {
+					parts := strings.SplitN(applied[i], "/", 2)
+					state = ObjectState{Existing: Existing{Kind: parts[0], ID: parts[1]}, Reversible: true}
 				}
+				if !state.Reversible {
+					continue
+				}
+				if rb := a.Restore(ctx, state); rb != nil {
+					out.Error += "; rollback " + applied[i] + ": " + rb.Error()
+					continue
+				}
+				out.RolledBack = true
 			}
 			return out, err
 		}

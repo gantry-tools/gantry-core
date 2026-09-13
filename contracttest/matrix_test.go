@@ -36,3 +36,10 @@ func TestSecurityFindingsRejectPublicDestructive(t *testing.T) {
 		t.Fatal("expected security finding")
 	}
 }
+
+func TestAutomationFindingsDogfoodGrammar(t *testing.T) {
+	m := Manifest{Project: "demo", Operations: []operation.Contract{{SchemaVersion: 1, ID: "demo.items.delete", Kind: operation.Destructive, Route: operation.Route{Method: "DELETE", Path: "/items/{id}"}, CLI: &operation.CLI{Resource: "items", Verb: "delete", Implemented: true}, Authorization: operation.Authorization{Boundary: operation.Session}, Schemas: operation.Schemas{Input: "items.request.v1", Output: "items.response.v1"}, Audit: operation.Audit{Required: true, Event: "demo.items.deleted"}, Automation: operation.Automatable}}}
+	if f := AutomationFindings(m); len(f) != 0 {
+		t.Fatalf("findings=%+v", f)
+	}
+}

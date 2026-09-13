@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/gantry-tools/gantry-core/cli"
 	"github.com/gantry-tools/gantry-core/operation"
 )
 
@@ -244,4 +245,39 @@ func SecurityFindings(manifest Manifest) []Finding {
 		return a < b
 	})
 	return findings
+}
+
+// AutomationFindings dogfoods the common non-interactive grammar against every
+// automatable operation in a manifest. The shared automation package separately
+// exercises actual HTTP/session/input/timeout behavior; this gate ensures no
+// product publishes a command mapping the grammar itself cannot invoke.
+func AutomationFindings(manifest Manifest) []Finding {
+	var findings []Finding
+	for _, c := range manifest.Operations {
+		if c.Automation != operation.Automatable || c.CLI == nil {
+			continue
+		}
+		args := []string{c.CLI.Resource, c.CLI.Verb}
+		for range pathPlaceholderCount(c.Route.Path) {
+			args = append(args, "example")
+		}
+		if c.Kind == operation.Destructive {
+			args = append(args, "--yes")
+		}
+		args = append(args, "--json", "--timeout", "30s", "--request-id", "phase5-dogfood", "--url", "http://127.0.0.1:1")
+		if _, err := cli.Parse(args); err != nil {
+			findings = append(findings, Finding{Code: "automation.grammar", Subject: c.ID, Message: err.Error()})
+		}
+	}
+	return findings
+}
+
+func pathPlaceholderCount(path string) int {
+	n := 0
+	for i := 0; i < len(path); i++ {
+		if path[i] == '{' {
+			n++
+		}
+	}
+	return n
 }

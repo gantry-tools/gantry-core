@@ -32,6 +32,8 @@ func TestRejectsUnsafeOrAmbiguousForms(t *testing.T) {
 	for _, args := range [][]string{
 		{"accounts", "list", "--token", "secret"},
 		{"accounts", "list", "--token-file", "-"},
+		{"accounts", "list", "--session-file", "-"},
+		{"accounts", "list", "--token-file", "/tmp/a", "--session-file", "/tmp/b"},
 		{"accounts", "list", "--json", "--output", "table"},
 		{"accounts"},
 		{"Accounts", "list"},

@@ -29,17 +29,19 @@ const (
 )
 
 type Invocation struct {
-	Resource  string
-	Verb      string
-	Arguments []string
-	Input     string
-	Output    Output
-	Quiet     bool
-	Confirm   bool
-	Timeout   time.Duration
-	RequestID string
-	URL       string
-	TokenFile string
+	Resource    string
+	Verb        string
+	Arguments   []string
+	Input       string
+	Output      Output
+	Quiet       bool
+	Confirm     bool
+	Timeout     time.Duration
+	RequestID   string
+	URL         string
+	TokenFile   string
+	SessionFile string
+	Query       []string
 }
 
 var ErrHelp = errors.New("help requested")
@@ -110,7 +112,7 @@ func Parse(args []string) (Invocation, error) {
 func takesValue(arg string) bool {
 	name, _, _ := strings.Cut(arg, "=")
 	switch name {
-	case "--input", "--timeout", "--request-id", "--url", "--token-file":
+	case "--input", "--timeout", "--request-id", "--url", "--token-file", "--session-file", "--query":
 		return true
 	default:
 		return false
@@ -160,7 +162,23 @@ func applyValue(inv *Invocation, name, value string) error {
 		if value == "-" {
 			return errors.New("token file cannot be stdin; stdin is reserved for operation input")
 		}
+		if inv.SessionFile != "" {
+			return errors.New("--token-file conflicts with --session-file")
+		}
 		inv.TokenFile = value
+	case "--query":
+		if !strings.Contains(value, "=") || strings.HasPrefix(value, "=") {
+			return errors.New("--query requires key=value")
+		}
+		inv.Query = append(inv.Query, value)
+	case "--session-file":
+		if value == "-" {
+			return errors.New("session file cannot be stdin")
+		}
+		if inv.TokenFile != "" {
+			return errors.New("--session-file conflicts with --token-file")
+		}
+		inv.SessionFile = value
 	default:
 		return fmt.Errorf("unsupported option %s", name)
 	}
@@ -190,8 +208,10 @@ func Usage(program string) string {
 		"  --yes                  accept declared non-interactive confirmation",
 		"  --timeout <duration>   operation timeout (default 30s)",
 		"  --request-id <id>      caller-supplied correlation/idempotency seed",
+		"  --query <key=value>     repeatable query parameter",
 		"  --url <http(s)://...>  remote application origin",
-		"  --token-file <path>    protected remote token file",
+		"  --token-file <path>    protected remote API-token file",
+		"  --session-file <path>  protected browser/CLI session file",
 	}, "\n")
 }
 

@@ -2,7 +2,7 @@
 
 Shared, dependency-light Go building blocks extracted from Cortex and Warden.
 
-The current stable public-preview release is **v0.1.0**.
+The current stable public-preview release is **v0.1.1**.
 
 | Package | Owns | Does not own |
 | --- | --- | --- |

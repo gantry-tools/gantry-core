@@ -33,8 +33,9 @@ The campaign's architectural boundaries are mandatory:
 
 ## Release state
 
-- Released stable: **v0.1.0** (stable public preview).
-- Current development: **0.1.1** on `main`.
+- Released stable: **v0.1.1** (stable public preview).
+- Current development: **0.1.1** on the release commit. Advance `main` to
+  **0.1.2** only after the coordinated Phase 1 consumer commits are complete.
 - Consumers should pin stable semantic versions rather than unpublished pseudo-versions.
 
 ## Release procedure

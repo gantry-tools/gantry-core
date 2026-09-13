@@ -192,31 +192,33 @@ Phase 5 acceptance: generated and CI-pinned coverage matrices now replace the sm
 
 ## Phase 6 - Configuration and policy propagation
 
-- [ ] **CP43 Propagation envelope.** Define kind, identity, schema version,
+- [x] **CP43 Propagation envelope.** Define kind, identity, schema version,
   revision, source, digest, dependencies, secret references, targets, conflict
   policy, actor and signature.
-- [ ] **CP44 Export/diff/dry-run/apply.** Require exact previews of creates,
+- [x] **CP44 Export/diff/dry-run/apply.** Require exact previews of creates,
   updates, deletions, incompatibilities, missing dependencies/secrets and denial.
-- [ ] **CP45 Targeting.** Support explicit nodes, groups/labels, capability
+- [x] **CP45 Targeting.** Support explicit nodes, groups/labels, capability
   matching and exclusions; future-node policy is separately explicit.
-- [ ] **CP46 Conflict and ownership.** Implement reject/source/destination/manual
+- [x] **CP46 Conflict and ownership.** Implement reject/source/destination/manual
   and declared merge policies; security policy never silently last-write-wins.
-- [ ] **CP47 Secrets.** Keep ordinary exports secret-free; use references or
+- [x] **CP47 Secrets.** Keep ordinary exports secret-free; use references or
   destination encryption with dedicated permission, masking and audit.
-- [ ] **CP48 Transactions and rollback.** Validate first, sign plans, record
+- [x] **CP48 Transactions and rollback.** Validate first, sign plans, record
   revisions, expose partial completion and rollback only declared-safe objects.
-- [ ] **CP49 Product adapters.** Add Watchpost monitor/alert policy, Trestle
+- [x] **CP49 Product adapters.** Add Watchpost monitor/alert policy, Trestle
   schema/access/integration definitions and Webfleet request/monitor/schedule
   definitions before considering Cortex/Warden administrative policy.
-- [ ] **CP50 Propagation UI.** Add selection, targets, diff, compatibility,
+- [x] **CP50 Propagation UI.** Add selection, targets, diff, compatibility,
   confirmation, per-node progress, retry/rollback and history to `/app/`.
-- [ ] **CP51 Scheduled reconciliation.** Only after manual dogfood, add saved
+- [x] **CP51 Scheduled reconciliation.** Only after manual dogfood, add saved
   profiles, drift detection, notify-only, schedules and approval requirements.
-- [ ] **CP52 Adversarial recovery.** Test partitions, restarts, stale revisions,
+- [x] **CP52 Adversarial recovery.** Test partitions, restarts, stale revisions,
   concurrent edits, invalid schemas, absent secrets, revocation and rollback.
-- [ ] **CP53 Final certification.** Prove fresh and upgraded three-node clusters,
+- [x] **CP53 Final certification.** Prove fresh and upgraded three-node clusters,
   rolling upgrades, credential lifecycle, propagation, recovery, isolation and
   UI/API/CLI parity.
+
+Phase 6 acceptance: shared propagation is now a configuration/policy distribution layer rather than database replication; Watchpost, Trestle and Webfleet expose declared product adapters, dry-run/apply/history/profile workflows, scheduled drift evaluation and fail-closed automatic reconciliation. Core certification covers fresh three-node distribution, clean drift, partitions, interruption/restart, stale/conflicting revisions, compatibility, secret/permission blockers, revocation and rollback. Product generated API/CLI matrices include the propagation surface, and runtime/history data remains explicitly node-local. See `docs/PHASE6_CERTIFICATION.md`.
 
 ## Checkpoint discipline
 

@@ -1,7 +1,9 @@
 package auth
 
 import (
+	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/hex"
 	"errors"
 	"net/http"
 	"sort"
@@ -303,7 +305,7 @@ func (store *SessionStore) ListSessions(accountID string) []SessionView {
 			continue
 		}
 		if session.AccountID == accountID {
-			out = append(out, SessionView{ID: id, Created: session.Created, Expires: session.Expires, RemoteIP: session.RemoteIP, UserAgent: session.UserAgent})
+			out = append(out, SessionView{ID: DisplaySessionID(id), Created: session.Created, Expires: session.Expires, RemoteIP: session.RemoteIP, UserAgent: session.UserAgent})
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Created.After(out[j].Created) })
@@ -317,13 +319,24 @@ func (store *SessionStore) CountSessions(accountID string) int {
 func (store *SessionStore) RevokeSession(accountID, sessionID string) bool {
 	store.mu.Lock()
 	defer store.mu.Unlock()
-	session, ok := store.sessions[sessionID]
-	if !ok || session.AccountID != accountID {
-		return false
+	for id, session := range store.sessions {
+		if session.AccountID == accountID && DisplaySessionID(id) == sessionID {
+			delete(store.sessions, id)
+			_ = store.saveLocked()
+			return true
+		}
 	}
-	delete(store.sessions, sessionID)
-	_ = store.saveLocked()
-	return true
+	return false
+}
+
+// DisplaySessionID returns the opaque identifier exposed through session
+// enumeration. It is derived from the bearer credential so the raw value is
+// never returned through ordinary listing (a hash is one-way, so a listed ID
+// cannot be replayed as the session credential), while remaining stable enough
+// for revocation and current-session indication.
+func DisplaySessionID(real string) string {
+	sum := sha256.Sum256([]byte(real))
+	return hex.EncodeToString(sum[:8])
 }
 
 func (store *SessionStore) CurrentSessionID(request *http.Request) string {

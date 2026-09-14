@@ -111,6 +111,57 @@ func TestExpiredAndDisabledPrincipalsAreRejected(t *testing.T) {
 	}
 }
 
+func TestSessionListNeverExposesBearerAndRevokeByDisplayID(t *testing.T) {
+	hash, err := HashPassword("password-seven")
+	if err != nil {
+		t.Fatal(err)
+	}
+	provider := testAccounts{account: Account{ID: "a", Enabled: true}, identity: Identity{ID: "i", Username: "admin", PasswordHash: hash, Enabled: true}}
+	memory := &memorySessions{sessions: map[string]Session{}}
+	options := SessionOptions{CookieName: "test_session", CSRFHeader: "X-Test-CSRF", ClientIP: func(*http.Request) string { return "127.0.0.1" }}
+	store, err := NewSessionStore(provider, memory, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest(http.MethodPost, "http://example.test/login", nil)
+	response := httptest.NewRecorder()
+	if _, err := store.Login(response, request, "admin", "password-seven"); err != nil {
+		t.Fatal(err)
+	}
+	cookie := response.Result().Cookies()[0]
+	views := store.ListSessions("a")
+	if len(views) != 1 {
+		t.Fatalf("sessions=%d", len(views))
+	}
+	if views[0].ID == cookie.Value {
+		t.Fatal("session enumeration exposed the raw bearer credential")
+	}
+	if views[0].ID == "" {
+		t.Fatal("session enumeration returned no revocable identifier")
+	}
+	// The listed (display) identifier must revoke the session.
+	if !store.RevokeSession("a", views[0].ID) {
+		t.Fatal("revoke by display id failed")
+	}
+	check := httptest.NewRequest(http.MethodGet, "http://example.test/", nil)
+	check.AddCookie(cookie)
+	if _, ok := store.Get(check); ok {
+		t.Fatal("session remained valid after revoke by display id")
+	}
+	// Revoking with the raw bearer id must not match (it is not the display id).
+	store2, _ := NewSessionStore(provider, &memorySessions{sessions: map[string]Session{}}, options)
+	req2 := httptest.NewRequest(http.MethodPost, "http://example.test/login", nil)
+	resp2 := httptest.NewRecorder()
+	_, _ = store2.Login(resp2, req2, "admin", "password-seven")
+	cookie2 := resp2.Result().Cookies()[0]
+	if store2.RevokeSession("a", cookie2.Value) {
+		t.Fatal("raw bearer id matched as a display id")
+	}
+	if DisplaySessionID(cookie2.Value) == cookie2.Value {
+		t.Fatal("display id must differ from the bearer credential")
+	}
+}
+
 func TestAuditRedactionAndOutcome(t *testing.T) {
 	event := NewAuditEvent("request", "authorization_denied", "/manage/", "a", "i", "127.0.0.1", "token=secret safe=value")
 	if event.Outcome != "denied" || event.Detail != "token=[redacted] safe=value" {

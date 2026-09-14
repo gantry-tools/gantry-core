@@ -132,3 +132,44 @@ func TestAutomationNetworkFailureIsUnavailable(t *testing.T) {
 		t.Fatalf("code=%d", code)
 	}
 }
+
+func TestAutomationRedactsSecretOutputs(t *testing.T) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"ok":true,"result":{"token":"super-secret-value","id":"abc"}}`))
+	}))
+	defer s.Close()
+	contracts := []operation.Contract{{SchemaVersion: 1, ID: "demo.cred.rotate", Kind: operation.Mutation, Route: operation.Route{Method: "POST", Path: "/cred/rotate"}, CLI: &operation.CLI{Resource: "cred", Verb: "rotate", Implemented: true}, Authorization: operation.Authorization{Boundary: operation.Public}, Schemas: operation.Schemas{Input: "demo.cred.request.v1", Output: "demo.cred.response.v1"}, Audit: operation.Audit{Required: true, Event: "demo.cred.rotated"}, SecretOutputs: []string{"/result/token"}, Automation: operation.Automatable}}
+
+	out := &strings.Builder{}
+	if code := Run([]string{"cred", "rotate", "--json"}, contracts, Options{Program: "demo", DefaultURL: s.URL, Stdout: out, Stderr: &strings.Builder{}}); code != 0 {
+		t.Fatalf("code=%d stderr=%q", code, out.String())
+	}
+	if strings.Contains(out.String(), "super-secret-value") {
+		t.Fatalf("secret leaked into output: %s", out.String())
+	}
+	var decoded struct {
+		Result struct {
+			Token string `json:"token"`
+			ID    string `json:"id"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal([]byte(out.String()), &decoded); err != nil {
+		t.Fatalf("output is not valid JSON: %v", err)
+	}
+	if decoded.Result.Token != "[redacted]" {
+		t.Fatalf("expected redacted token, got: %s", out.String())
+	}
+	if decoded.Result.ID != "abc" {
+		t.Fatalf("non-secret field should remain, got: %s", out.String())
+	}
+
+	noContract := operation.Contract{SchemaVersion: 1, ID: "demo.cred.list", Kind: operation.Read, Route: operation.Route{Method: "GET", Path: "/cred"}, CLI: &operation.CLI{Resource: "cred", Verb: "list", Implemented: true}, Authorization: operation.Authorization{Boundary: operation.Public}, Schemas: operation.Schemas{Output: "demo.cred.list.v1"}, Idempotency: operation.Idempotency{RetrySafe: true}, Automation: operation.Automatable}
+	out2 := &strings.Builder{}
+	if code := Run([]string{"cred", "list", "--json"}, []operation.Contract{noContract}, Options{Program: "demo", DefaultURL: s.URL, Stdout: out2, Stderr: &strings.Builder{}}); code != 0 {
+		t.Fatalf("code=%d", code)
+	}
+	if !strings.Contains(out2.String(), "super-secret-value") {
+		t.Fatalf("contract without SecretOutputs must pass through: %s", out2.String())
+	}
+}

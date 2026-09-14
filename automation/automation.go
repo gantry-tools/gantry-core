@@ -20,6 +20,7 @@ import (
 
 	"github.com/gantry-tools/gantry-core/cli"
 	"github.com/gantry-tools/gantry-core/operation"
+	"github.com/gantry-tools/gantry-core/protocol"
 )
 
 const maxBody = 1 << 20
@@ -161,6 +162,7 @@ func Run(args []string, contracts []operation.Contract, options Options) int {
 			}
 		}
 	}
+	data = redactOutput(data, c.SecretOutputs)
 	if !inv.Quiet && len(data) != 0 {
 		out := output(options.Stdout, os.Stdout)
 		if inv.Output == cli.JSON {
@@ -188,6 +190,26 @@ func find(contracts []operation.Contract, resource, verb string) (operation.Cont
 	}
 	return operation.Contract{}, false
 }
+
+func redactOutput(data []byte, pointers []string) []byte {
+	if len(pointers) == 0 || !json.Valid(data) {
+		return data
+	}
+	var value any
+	if json.Unmarshal(data, &value) != nil {
+		return data
+	}
+	redacted, err := protocol.Redact(value, pointers)
+	if err != nil {
+		return data
+	}
+	encoded, err := json.Marshal(redacted)
+	if err != nil {
+		return data
+	}
+	return encoded
+}
+
 func routeURL(base, path string, args []string, queries []string) (string, error) {
 	vars := pathVar.FindAllString(path, -1)
 	if len(args) != len(vars) {

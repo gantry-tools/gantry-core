@@ -19,11 +19,15 @@ type AuditEvent struct {
 	CreatedAt     int64  `json:"createdAt"`
 }
 
-var auditSecretPattern = regexp.MustCompile(`(?i)(password|token|secret|credential|authorization|recovery|totp|api[_-]?key|session)\s*=\s*("[^"]*"|[^\s]+)`)
+var (
+	auditSecretPattern = regexp.MustCompile(`(?i)(password|token|secret|credential|authorization|recovery|totp|api[_-]?key|session)\s*=\s*("[^"]*"|[^\s]+)`)
+	auditJSONPattern   = regexp.MustCompile(`(?i)"(password|token|secret|credential|authorization|recovery|totp|api[_-]?key|session)"\s*:\s*"[^"]*"`)
+)
 
 func RedactAuditDetail(detail string) string {
 	detail = strings.ToValidUTF8(strings.TrimSpace(detail), "�")
 	detail = auditSecretPattern.ReplaceAllString(detail, "$1=[redacted]")
+	detail = auditJSONPattern.ReplaceAllString(detail, `"$1": "[redacted]"`)
 	if len(detail) > 4096 {
 		detail = detail[:4096] + "[truncated]"
 	}

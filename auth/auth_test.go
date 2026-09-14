@@ -117,6 +117,20 @@ func TestAuditRedactionAndOutcome(t *testing.T) {
 	}
 }
 
+func TestAuditRedactionCoversJSONSecrets(t *testing.T) {
+	cases := []struct{ input, want string }{
+		{`{"password":"hunter2","ok":true}`, `{"password": "[redacted]","ok":true}`},
+		{`{"apiKey": "abc123", "other":"fine"}`, `{"apiKey": "[redacted]", "other":"fine"}`},
+		{`sent {"token":"xyz"} and kept going`, `sent {"token": "[redacted]"} and kept going`},
+		{`{"session":"abc","authorization":"Bearer x"}`, `{"session": "[redacted]","authorization": "[redacted]"}`},
+	}
+	for _, c := range cases {
+		if got := RedactAuditDetail(c.input); got != c.want {
+			t.Errorf("RedactAuditDetail(%q) = %q, want %q", c.input, got, c.want)
+		}
+	}
+}
+
 func TestCompatibilityFixture(t *testing.T) {
 	data, err := os.ReadFile("testdata/compatibility.json")
 	if err != nil {

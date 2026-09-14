@@ -22,10 +22,15 @@ type AuditEvent struct {
 var (
 	auditSecretPattern = regexp.MustCompile(`(?i)(password|token|secret|credential|authorization|recovery|totp|api[_-]?key|session)\s*=\s*("[^"]*"|[^\s]+)`)
 	auditJSONPattern   = regexp.MustCompile(`(?i)"(password|token|secret|credential|authorization|recovery|totp|api[_-]?key|session)"\s*:\s*"[^"]*"`)
+	// auditControlPattern strips C0 control characters and DEL so client-supplied
+	// audit detail (for example a workspace path) can never forge audit lines or
+	// corrupt the structured history with control bytes.
+	auditControlPattern = regexp.MustCompile(`[\x00-\x1f\x7f]`)
 )
 
 func RedactAuditDetail(detail string) string {
 	detail = strings.ToValidUTF8(strings.TrimSpace(detail), "�")
+	detail = auditControlPattern.ReplaceAllString(detail, "")
 	detail = auditSecretPattern.ReplaceAllString(detail, "$1=[redacted]")
 	detail = auditJSONPattern.ReplaceAllString(detail, `"$1": "[redacted]"`)
 	if len(detail) > 4096 {

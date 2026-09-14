@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -128,6 +129,20 @@ func TestAuditRedactionCoversJSONSecrets(t *testing.T) {
 		if got := RedactAuditDetail(c.input); got != c.want {
 			t.Errorf("RedactAuditDetail(%q) = %q, want %q", c.input, got, c.want)
 		}
+	}
+}
+
+func TestAuditRedactionStripsControlCharacters(t *testing.T) {
+	input := "workspace=foo\nwarden_access action=set-role target=administrator\x00\r\x1b[0m token=abc"
+	got := RedactAuditDetail(input)
+	if strings.ContainsAny(got, "\n\r\x00\x1b") {
+		t.Fatalf("control characters survived audit redaction: %q", got)
+	}
+	if !strings.Contains(got, "foo") || !strings.Contains(got, "set-role") {
+		t.Fatalf("legitimate audit text was mangled: %q", got)
+	}
+	if !strings.Contains(got, "token=[redacted]") {
+		t.Fatalf("secret not redacted: %q", got)
 	}
 }
 

@@ -172,16 +172,23 @@ func (model *Model) Capabilities(accountID string) []string {
 }
 
 func (model *Model) CreateInitialAdministrator(displayName, username, password string) (Account, error) {
-	model.mu.RLock()
-	notEmpty := len(model.users.Accounts) != 0
-	model.mu.RUnlock()
-	if notEmpty {
+	model.mu.Lock()
+	defer model.mu.Unlock()
+	if len(model.users.Accounts) != 0 {
 		return Account{}, errors.New("setup is already complete")
 	}
-	return model.CreateAccount(displayName, username, password, []string{"administrator"})
+	return model.createAccount(displayName, username, password, []string{"administrator"})
 }
 
 func (model *Model) CreateAccount(displayName, username, password string, roles []string) (Account, error) {
+	model.mu.Lock()
+	defer model.mu.Unlock()
+	return model.createAccount(displayName, username, password, roles)
+}
+
+// createAccount appends a new password-backed account to the current in-memory
+// snapshot. The caller must hold model.mu for writing.
+func (model *Model) createAccount(displayName, username, password string, roles []string) (Account, error) {
 	displayName, username = strings.TrimSpace(displayName), strings.TrimSpace(username)
 	if displayName == "" || username == "" || len([]rune(password)) < 7 {
 		return Account{}, errors.New("display name, username and a password of at least 7 characters are required")
@@ -195,8 +202,6 @@ func (model *Model) CreateAccount(displayName, username, password string, roles 
 		Roles: DedupeStrings(roles), CreatedAt: time.Now().UTC(),
 		Identities: []Identity{{ID: NewID("id"), Type: "password", Username: username, PasswordHash: hash, Enabled: true}},
 	}
-	model.mu.Lock()
-	defer model.mu.Unlock()
 	next := cloneAccounts(model.users)
 	next.Accounts = append(next.Accounts, account)
 	if err := ValidateAccounts(next, model.roles, model.policy); err != nil {

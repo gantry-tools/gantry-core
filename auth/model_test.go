@@ -1,6 +1,9 @@
 package auth
 
-import "testing"
+import (
+	"sync"
+	"testing"
+)
 
 type memoryAccounts struct {
 	users AccountsFile
@@ -73,6 +76,41 @@ func TestModelsDoNotShareApplicationAccounts(t *testing.T) {
 	}
 	if !second.Empty() {
 		t.Fatal("independent application model observed another application's account")
+	}
+}
+
+func TestCreateInitialAdministratorIsAtomicUnderConcurrency(t *testing.T) {
+	store := &memoryAccounts{
+		users: AccountsFile{Version: 1, Accounts: []Account{}},
+		roles: RolesFile{Version: 1, Roles: []Role{{ID: "administrator", Name: "Administrator", Capabilities: []string{"*"}, BuiltIn: true}}},
+	}
+	model, err := NewModel(store, AccountPolicy{SchemaVersion: 1, ProductName: "Test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	created := make(chan error, 16)
+	for i := 0; i < 16; i++ {
+		wg.Add(1)
+		go func(n int) {
+			defer wg.Done()
+			_, err := model.CreateInitialAdministrator("Admin", "admin", "password-one")
+			created <- err
+		}(i)
+	}
+	wg.Wait()
+	close(created)
+	successes := 0
+	for err := range created {
+		if err == nil {
+			successes++
+		}
+	}
+	if successes != 1 {
+		t.Fatalf("expected exactly one successful setup, got %d", successes)
+	}
+	if len(model.Accounts()) != 1 {
+		t.Fatalf("expected exactly one account, got %d", len(model.Accounts()))
 	}
 }
 

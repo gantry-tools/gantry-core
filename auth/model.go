@@ -127,16 +127,21 @@ func (model *Model) Account(id string) (Account, bool) {
 	return Account{}, false
 }
 
-func (model *Model) AuthenticatePassword(username, password string) (Account, Identity, bool) {
+// AuthenticatePassword verifies a password login against a single identifier,
+// matching the identity's username OR email (case-insensitively).
+func (model *Model) AuthenticatePassword(identifier, password string) (Account, Identity, bool) {
 	model.mu.RLock()
 	defer model.mu.RUnlock()
-	wanted := strings.TrimSpace(username)
+	wanted := strings.TrimSpace(identifier)
+	if wanted == "" {
+		return Account{}, Identity{}, false
+	}
 	for _, account := range model.users.Accounts {
 		if !account.Enabled {
 			continue
 		}
 		for _, identity := range account.Identities {
-			if identity.Enabled && identity.Type == "password" && strings.EqualFold(identity.Username, wanted) && VerifyPassword(identity.PasswordHash, password) {
+			if identity.Enabled && identity.Type == "password" && (strings.EqualFold(identity.Username, wanted) || strings.EqualFold(identity.Email, wanted)) && VerifyPassword(identity.PasswordHash, password) {
 				return cloneAccount(account), cloneIdentity(identity), true
 			}
 		}
@@ -171,25 +176,25 @@ func (model *Model) Capabilities(accountID string) []string {
 	return nil
 }
 
-func (model *Model) CreateInitialAdministrator(displayName, username, password string) (Account, error) {
+func (model *Model) CreateInitialAdministrator(displayName, username, email, password string) (Account, error) {
 	model.mu.Lock()
 	defer model.mu.Unlock()
 	if len(model.users.Accounts) != 0 {
 		return Account{}, errors.New("setup is already complete")
 	}
-	return model.createAccount(displayName, username, password, []string{"administrator"})
+	return model.createAccount(displayName, username, email, password, []string{"administrator"})
 }
 
-func (model *Model) CreateAccount(displayName, username, password string, roles []string) (Account, error) {
+func (model *Model) CreateAccount(displayName, username, email, password string, roles []string) (Account, error) {
 	model.mu.Lock()
 	defer model.mu.Unlock()
-	return model.createAccount(displayName, username, password, roles)
+	return model.createAccount(displayName, username, email, password, roles)
 }
 
 // createAccount appends a new password-backed account to the current in-memory
 // snapshot. The caller must hold model.mu for writing.
-func (model *Model) createAccount(displayName, username, password string, roles []string) (Account, error) {
-	displayName, username = strings.TrimSpace(displayName), strings.TrimSpace(username)
+func (model *Model) createAccount(displayName, username, email, password string, roles []string) (Account, error) {
+	displayName, username, email = strings.TrimSpace(displayName), strings.TrimSpace(username), strings.TrimSpace(email)
 	if displayName == "" || username == "" || len([]rune(password)) < 7 {
 		return Account{}, errors.New("display name, username and a password of at least 7 characters are required")
 	}
@@ -200,7 +205,7 @@ func (model *Model) createAccount(displayName, username, password string, roles 
 	account := Account{
 		ID: NewID("acct"), DisplayName: displayName, Enabled: true,
 		Roles: DedupeStrings(roles), CreatedAt: time.Now().UTC(),
-		Identities: []Identity{{ID: NewID("id"), Type: "password", Username: username, PasswordHash: hash, Enabled: true}},
+		Identities: []Identity{{ID: NewID("id"), Type: "password", Username: username, Email: email, PasswordHash: hash, Enabled: true}},
 	}
 	next := cloneAccounts(model.users)
 	next.Accounts = append(next.Accounts, account)
@@ -308,7 +313,7 @@ func (model *Model) AddIdentity(accountID string, identity Identity) (Identity, 
 	return cloneIdentity(identity), nil
 }
 
-func (model *Model) AddPasswordIdentity(accountID, username, password string) (Identity, error) {
+func (model *Model) AddPasswordIdentity(accountID, username, email, password string) (Identity, error) {
 	if len([]rune(password)) < 7 {
 		return Identity{}, errors.New("password must be at least 7 characters")
 	}
@@ -316,7 +321,7 @@ func (model *Model) AddPasswordIdentity(accountID, username, password string) (I
 	if err != nil {
 		return Identity{}, err
 	}
-	return model.AddIdentity(accountID, Identity{Type: "password", Username: username, PasswordHash: hash, Enabled: true})
+	return model.AddIdentity(accountID, Identity{Type: "password", Username: username, Email: email, PasswordHash: hash, Enabled: true})
 }
 
 func (model *Model) SetIdentityTOTP(accountID, identityID string, enabled bool, recoveryHashes []string) error {

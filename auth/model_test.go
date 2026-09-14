@@ -33,12 +33,15 @@ func TestModelProvidesCanonicalIsolatedAccountLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	admin, err := model.CreateInitialAdministrator("Admin", "admin", "password-one")
+	admin, err := model.CreateInitialAdministrator("Admin", "admin", "admin@example.com", "password-one")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, identity, ok := model.AuthenticatePassword("ADMIN", "password-one"); !ok || identity.Type != "password" {
 		t.Fatal("canonical password identity did not authenticate")
+	}
+	if _, _, ok := model.AuthenticatePassword("admin@example.com", "password-one"); !ok {
+		t.Fatal("password identity did not authenticate by email")
 	}
 	if !HasCapability(model.Capabilities(admin.ID), "anything") {
 		t.Fatal("administrator wildcard capability missing")
@@ -71,7 +74,7 @@ func TestModelsDoNotShareApplicationAccounts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = first.CreateInitialAdministrator("First", "first", "password-one"); err != nil {
+	if _, err = first.CreateInitialAdministrator("First", "first", "first@example.com", "password-one"); err != nil {
 		t.Fatal(err)
 	}
 	if !second.Empty() {
@@ -94,7 +97,7 @@ func TestCreateInitialAdministratorIsAtomicUnderConcurrency(t *testing.T) {
 		wg.Add(1)
 		go func(n int) {
 			defer wg.Done()
-			_, err := model.CreateInitialAdministrator("Admin", "admin", "password-one")
+			_, err := model.CreateInitialAdministrator("Admin", "admin", "admin@example.com", "password-one")
 			created <- err
 		}(i)
 	}

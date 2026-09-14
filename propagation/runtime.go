@@ -30,9 +30,10 @@ type LocalAdapter interface {
 	Restore(context.Context, ObjectState) error
 }
 type ApplyBundleResult struct {
-	Revisions  []AppliedRevision `json:"revisions"`
-	RolledBack bool              `json:"rolled_back"`
-	Error      string            `json:"error,omitempty"`
+	Revisions       []AppliedRevision `json:"revisions"`
+	RolledBack      bool              `json:"rolled_back"`
+	RolledBackCount int               `json:"rolled_back_count,omitempty"`
+	Error           string            `json:"error,omitempty"`
 }
 
 func SupportedKindMap(a LocalAdapter) map[string]KindDescriptor {
@@ -99,6 +100,7 @@ func ApplyLocal(ctx context.Context, a LocalAdapter, source []Envelope, actor Ac
 					continue
 				}
 				out.RolledBack = true
+				out.RolledBackCount++
 			}
 			return out, err
 		}

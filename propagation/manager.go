@@ -64,8 +64,10 @@ func (m *Manager) Apply(ctx context.Context, planID string, source []Envelope, a
 			h.Status = "applied"
 		}
 		if r.RolledBack {
-			h.RolledBack = h.Applied
-			h.Status = "rolled-back"
+			h.RolledBack = r.RolledBackCount
+			if r.RolledBackCount >= h.Applied {
+				h.Status = "rolled-back"
+			}
 		}
 		_ = m.Store.RecordHistory(ctx, h)
 	}

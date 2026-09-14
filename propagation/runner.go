@@ -42,10 +42,12 @@ func (m *Manager) RunDueProfiles(ctx context.Context, fn ProfileRunFunc) ([]Prof
 			r.ProfileID = p.ID
 			r.Error = e.Error()
 		}
-		p.LastRunAt = &now
-		if se := m.SaveProfile(ctx, p); se != nil && e == nil {
-			e = se
-			r.Error = se.Error()
+		if e == nil && r.Error == "" {
+			p.LastRunAt = &now
+			if se := m.SaveProfile(ctx, p); se != nil {
+				r.Error = se.Error()
+				e = se
+			}
 		}
 		out = append(out, r)
 	}

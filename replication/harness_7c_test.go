@@ -568,6 +568,73 @@ func TestLearnerCatchUpAcrossLeaderChange(t *testing.T) {
 	waitValue(t, c.Nodes["d"], "adv/key-19", "V")
 }
 
+func TestLearnerPromotionRefusedUntilCatchUp(t *testing.T) {
+	c := NewCluster()
+	t.Cleanup(c.CloseAll)
+	mustAddNode(t, c, "n1", t.TempDir(), false)
+	mustAddNode(t, c, "n2", t.TempDir(), false)
+	joinVoterRetry(t, c, "n2")
+	waitLeaderKnown(t, c)
+	proposeSuccess(t, c, kvSet("op-1", "foo", "A", 0))
+
+	// Add a learner and isolate it BEFORE advancing the log, so it lags.
+	mustAddNode(t, c, "l", t.TempDir(), false)
+	if err := c.AddLearner("l", "node-l"); err != nil {
+		t.Fatal(err)
+	}
+	c.Fabric.Isolate("l")
+	// Writes commit on the voters while the learner is behind.
+	writeN(t, c, "lag", 5)
+
+	// Confirm the leader applied writes the isolated learner cannot see.
+	waitFor(t, 10*time.Second, "leader advanced past the isolated learner", func() bool {
+		l := c.Leader()
+		if l == nil {
+			return false
+		}
+		_, _, okLeader := l.FSM().Get("lag/key-4")
+		_, _, okLearner := c.Nodes["l"].FSM().Get("lag/key-4")
+		return okLeader && !okLearner
+	})
+
+	// Promotion must be refused while the learner is behind.
+	if err := c.PromoteLearnerAfterCatchUp("l", 1500*time.Millisecond); err == nil {
+		t.Fatal("promotion of a lagging learner must be refused")
+	}
+	// It remains a non-voter (cannot affect quorum).
+	cfg, err := c.Leader().Configuration()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range cfg {
+		if s.ID == "l" {
+			if s.Suffrage != raft.Nonvoter {
+				t.Fatalf("lagging learner must remain a non-voter, got %v", s.Suffrage)
+			}
+		}
+	}
+	// A write still commits (learner never gates quorum).
+	proposeSuccess(t, c, kvSet("op-2", "bar", "B", 0))
+
+	// Recovery: reconnect, let it catch up, then promotion succeeds.
+	c.Fabric.Reconnect("l")
+	if err := c.PromoteLearnerAfterCatchUp("l", 20*time.Second); err != nil {
+		t.Fatalf("promotion after catch-up: %v", err)
+	}
+	waitFor(t, 20*time.Second, "learner promoted to voter", func() bool {
+		cfg, err := c.Leader().Configuration()
+		if err != nil {
+			return false
+		}
+		for _, s := range cfg {
+			if s.ID == "l" && s.Suffrage == raft.Voter {
+				return true
+			}
+		}
+		return false
+	})
+}
+
 func TestCompleteClusterRestartAfterCompaction(t *testing.T) {
 	dirs := []string{t.TempDir(), t.TempDir(), t.TempDir()}
 	c1 := NewCluster()

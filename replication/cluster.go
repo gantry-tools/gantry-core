@@ -103,6 +103,53 @@ func (c *Cluster) AddNodeCaps(id raft.ServerID, dir string, durable bool, maxSch
 	return node, nil
 }
 
+// AddNetNode creates a node that uses an explicit production transport (e.g.
+// NetTransport) instead of the in-process Fabric, with an authenticated
+// capability source. The first node is bootstrapped as the sole voter.
+func (c *Cluster) AddNetNode(id raft.ServerID, addr raft.ServerAddress, dir string, durable bool, transport raft.Transport, capSource CapabilitySource) (*Node, error) {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return nil, err
+	}
+	var logStore raft.LogStore
+	var stable raft.StableStore
+	if durable {
+		bs, err := NewBoltStore(filepath.Join(dir, "raft.db"))
+		if err != nil {
+			return nil, err
+		}
+		logStore, stable = bs, bs
+		c.stores[id] = bs
+	} else {
+		in := raft.NewInmemStore()
+		logStore, stable = in, in
+	}
+	snaps, err := raft.NewFileSnapshotStore(filepath.Join(dir, "snapshots"), 3, nil)
+	if err != nil {
+		return nil, err
+	}
+	bootstrap := len(c.Nodes) == 0
+	node, err := NewNode(NodeOptions{
+		ID:                 id,
+		Address:            addr,
+		Transport:          transport,
+		LogStore:           logStore,
+		StableStore:        stable,
+		SnapshotStore:      snaps,
+		Bootstrap:          bootstrap,
+		HeartbeatTimeout:   c.heartbeat,
+		ElectionTimeout:    c.election,
+		CommitTimeout:      c.commit,
+		LeaderLeaseTimeout: c.lease,
+		ProposeTimeout:     c.propose,
+		CapabilitySource:   capSource,
+	})
+	if err != nil {
+		return nil, err
+	}
+	c.Nodes[id] = node
+	return node, nil
+}
+
 // Join adds node id/addr to the cluster through the current leader (voter).
 func (c *Cluster) Join(id raft.ServerID, addr raft.ServerAddress) error {
 	leader := c.Leader()
@@ -119,6 +166,29 @@ func (c *Cluster) AddLearner(id raft.ServerID, addr raft.ServerAddress) error {
 		return fmt.Errorf("replication: no leader to add learner through")
 	}
 	return leader.AddNonvoter(id, addr)
+}
+
+// PromoteLearnerAfterCatchUp promotes a learner to voter only once it has
+// caught up to the leader's applied index. If it does not catch up within
+// timeout it refuses (returns an error), so a lagging learner is never
+// granted a vote (interrupted catch-up has an explicit recovery path: retry
+// after it catches up).
+func (c *Cluster) PromoteLearnerAfterCatchUp(id raft.ServerID, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		l := c.Leader()
+		if l == nil {
+			time.Sleep(10 * time.Millisecond)
+			continue
+		}
+		// Compare log last-index (stable, monotonic) rather than applied index,
+		// which can be transiently low on a leader that is still applying.
+		if c.Nodes[id].LastIndex() >= l.LastIndex() {
+			return l.AddVoter(id, c.Nodes[id].Address())
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return fmt.Errorf("replication: learner %s did not catch up; promotion refused", id)
 }
 
 // Leader returns the current leader node, or nil if none is elected yet.

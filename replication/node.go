@@ -67,6 +67,11 @@ type NodeOptions struct {
 	SupportedSnapshotFormat     int
 	Features                    []string
 
+	// CapabilitySource supplies authenticated voter capabilities for schema
+	// gating. Nil defaults to the Fabric (test harness); production supplies a
+	// membership-backed source.
+	CapabilitySource CapabilitySource
+
 	Logger io.Writer
 }
 
@@ -81,6 +86,7 @@ type Node struct {
 	fabric  *Fabric
 	timeout time.Duration
 	caps    Capabilities
+	capSrc  CapabilitySource
 
 	mu    sync.Mutex
 	local map[string]string
@@ -167,7 +173,11 @@ func NewNode(opts NodeOptions) (*Node, error) {
 	if opts.Fabric != nil {
 		opts.Fabric.RegisterCapabilities(opts.ID, caps)
 	}
-	return &Node{id: opts.ID, addr: opts.Address, raft: r, fsm: fsm, fabric: opts.Fabric, timeout: timeout, caps: caps, local: make(map[string]string)}, nil
+	capSrc := opts.CapabilitySource
+	if capSrc == nil {
+		capSrc = opts.Fabric
+	}
+	return &Node{id: opts.ID, addr: opts.Address, raft: r, fsm: fsm, fabric: opts.Fabric, timeout: timeout, caps: caps, capSrc: capSrc, local: make(map[string]string)}, nil
 }
 
 // ID returns the node's stable identity.
@@ -233,7 +243,7 @@ func (n *Node) requireVoterSchemaSupport(v int) error {
 	if !n.caps.SupportsOperation(v) {
 		return fmt.Errorf("node %s does not support replication schema %d", n.id, v)
 	}
-	if n.fabric == nil {
+	if n.capSrc == nil {
 		return nil
 	}
 	cfg, err := n.Configuration()
@@ -244,7 +254,7 @@ func (n *Node) requireVoterSchemaSupport(v int) error {
 		if s.Suffrage != raft.Voter {
 			continue
 		}
-		caps, ok := n.fabric.CapabilitiesOf(s.ID)
+		caps, ok := n.capSrc.CapabilitiesOf(s.ID)
 		if !ok {
 			return fmt.Errorf("voter %s capabilities unknown; failing closed", s.ID)
 		}

@@ -21,11 +21,11 @@ import (
 	"time"
 )
 
-// Version is the replication operation schema version supported by this
-// implementation. It is the semantic replication contract version: what
-// committed operations and snapshots mean. It is distinct from any product
-// storage schema.
-const Version = 1
+// Version is the highest replication operation schema version understood by
+// this build. Schema negotiation (all voters must support a schema before
+// operations requiring it may commit) is exercised against versions 1..Version;
+// a node advertises its own max via Capabilities.OperationSchemaVersions.
+const Version = 2
 
 // SupportedVersion reports whether opVersion is supported by this build.
 func SupportedVersion(opVersion int) bool { return opVersion >= 1 && opVersion <= Version }

@@ -154,19 +154,51 @@ func TestKVFSMSnapshotVersionFailClosed(t *testing.T) {
 	if err := snap.Persist(snapshotSink{&buf}); err != nil {
 		t.Fatal(err)
 	}
-	// Rewrite the semantic snapshot version to an unsupported value.
-	var st snapshotState
-	if err := json.Unmarshal(buf.Bytes(), &st); err != nil {
-		t.Fatal(err)
-	}
-	st.Version = Version + 1
-	bad, err := json.Marshal(st)
+	valid := buf.Bytes()
+
+	// Producer gate: an unsupported replication version cannot be encoded.
+	env, err := DecodeSnapshot(valid)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Restore must reject an incompatible snapshot version deterministically.
-	if err := NewKVFSM().Restore(snapshotReader{bytes.NewReader(bad)}); err == nil || !strings.Contains(err.Error(), "unsupported snapshot replication version") {
-		t.Fatalf("incompatible snapshot version must fail closed, got %v", err)
+	env.ReplicationVersion = Version + 1
+	if _, err := env.Encode(); err == nil || !strings.Contains(err.Error(), "unsupported snapshot replication version") {
+		t.Fatalf("Encode must reject an unsupported replication version, got %v", err)
+	}
+
+	// Restore gate (format version): a valid-integrity envelope carrying an
+	// unsupported format version must be rejected before any state is touched.
+	raw := &SnapshotEnvelope{
+		FormatVersion:      SnapshotFormatVersion + 1,
+		ReplicationVersion: Version,
+		State:              map[string]kvEntry{"x": {Value: "y", Revision: 1}},
+		AppliedOps:         map[string]appliedOp{},
+	}
+	d, err := raw.contentDigest()
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw.Integrity = d
+	badFormat, _ := json.Marshal(raw)
+	f2 := NewKVFSM()
+	applyLog(t, f2, []Operation{kvSet("op-existing", "keep", "K", 0)})
+	if err := f2.Restore(snapshotReader{bytes.NewReader(badFormat)}); err == nil || !strings.Contains(err.Error(), "unsupported snapshot format version") {
+		t.Fatalf("Restore must reject an unsupported format version, got %v", err)
+	}
+	if v, _, ok := f2.Get("keep"); !ok || v != "K" {
+		t.Fatal("a rejected snapshot must not mutate existing state")
+	}
+
+	// Corruption: tampering the payload breaks integrity and fails closed.
+	corrupted := append([]byte(nil), valid...)
+	corrupted[len(corrupted)/2] ^= 0xff
+	f3 := NewKVFSM()
+	applyLog(t, f3, []Operation{kvSet("op-existing", "keep", "K", 0)})
+	if err := f3.Restore(snapshotReader{bytes.NewReader(corrupted)}); err == nil {
+		t.Fatal("a corrupted snapshot must fail closed")
+	}
+	if v, _, ok := f3.Get("keep"); !ok || v != "K" {
+		t.Fatal("a corrupted snapshot must not mutate existing state")
 	}
 }
 

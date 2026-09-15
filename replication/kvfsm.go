@@ -42,19 +42,44 @@ type appliedOp struct {
 type KVFSM struct {
 	mu           sync.Mutex
 	supported    int
+	product      string
 	state        map[string]kvEntry
 	applied      map[string]appliedOp
 	appliedIndex uint64
 	appliedTerm  uint64
 }
 
-// NewKVFSM returns a KVFSM supporting the current replication version.
-func NewKVFSM() *KVFSM {
+// NewKVFSM returns a KVFSM supporting the current build's replication version.
+func NewKVFSM() *KVFSM { return NewKVFSMWithSchema(Version) }
+
+// NewKVFSMWithSchema returns a KVFSM whose apply/snapshot gates accept
+// operation schemas up to maxSchema (used to simulate rolling-version nodes).
+func NewKVFSMWithSchema(maxSchema int) *KVFSM {
+	if maxSchema < 1 {
+		maxSchema = 1
+	}
+	if maxSchema > Version {
+		maxSchema = Version
+	}
 	return &KVFSM{
-		supported: Version,
+		supported: maxSchema,
 		state:     make(map[string]kvEntry),
 		applied:   make(map[string]appliedOp),
 	}
+}
+
+// SetSupported raises/lowers the operation schema versions this FSM accepts
+// (models a rolling software upgrade on a live node).
+func (f *KVFSM) SetSupported(maxSchema int) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if maxSchema < 1 {
+		maxSchema = 1
+	}
+	if maxSchema > Version {
+		maxSchema = Version
+	}
+	f.supported = maxSchema
 }
 
 var _ raft.FSM = (*KVFSM)(nil)
@@ -73,8 +98,8 @@ func (f *KVFSM) Apply(l *raft.Log) interface{} {
 }
 
 func (f *KVFSM) applyLocked(op Operation, index, term uint64) interface{} {
-	if !SupportedVersion(op.Version) {
-		return fmt.Errorf("unsupported replication operation version %d (supported: 1..%d)", op.Version, f.supported)
+	if op.Version > f.supported {
+		return fmt.Errorf("node does not support replication operation version %d (supported: 1..%d)", op.Version, f.supported)
 	}
 	if err := ValidateKind(op.Kind); err != nil {
 		return err
@@ -128,6 +153,9 @@ func (f *KVFSM) applyLocked(op Operation, index, term uint64) interface{} {
 		Revision: newRev,
 	}
 	f.applied[op.ID] = appliedOp{Digest: digest, Result: res}
+	if f.product == "" {
+		f.product = op.Product
+	}
 	f.appliedIndex = index
 	f.appliedTerm = term
 	return res
@@ -166,7 +194,7 @@ func (f *KVFSM) AppliedIndex() (uint64, uint64) {
 
 // Snapshot implements raft.FSM. It returns the replicated keyspace plus the
 // durable idempotency record and applied position; node-local state is absent
-// by construction.
+// by construction. Persist writes the versioned semantic SnapshotEnvelope.
 func (f *KVFSM) Snapshot() (raft.FSMSnapshot, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -178,58 +206,81 @@ func (f *KVFSM) Snapshot() (raft.FSMSnapshot, error) {
 	for k, v := range f.applied {
 		applied[k] = v
 	}
-	return &kvSnapshot{state: state, applied: applied, index: f.appliedIndex, term: f.appliedTerm}, nil
+	return &kvSnapshot{product: f.product, supported: f.supported, state: state, applied: applied, index: f.appliedIndex, term: f.appliedTerm}, nil
 }
 
-// Restore implements raft.FSM: the FSM discards all previous state and loads
-// the snapshot.
+// Restore implements raft.FSM. It is atomic from the semantic state machine's
+// perspective: the snapshot is decoded and integrity-verified, format and
+// replication versions are validated, and a replacement state is constructed
+// before any existing state is touched. An incompatible or corrupted snapshot
+// is rejected before it can partially mutate the FSM.
 func (f *KVFSM) Restore(rc io.ReadCloser) error {
 	defer rc.Close()
-	var snap snapshotState
-	if err := json.NewDecoder(rc).Decode(&snap); err != nil {
+	b, err := io.ReadAll(rc)
+	if err != nil {
 		return err
 	}
-	if !SupportedVersion(snap.Version) {
-		return fmt.Errorf("unsupported snapshot replication version %d (supported: 1..%d)", snap.Version, f.supported)
+	env, err := DecodeSnapshot(b)
+	if err != nil {
+		return err
 	}
+	if err := env.validate(); err != nil {
+		return err
+	}
+	if env.ReplicationVersion > f.supported {
+		return fmt.Errorf("node does not support snapshot replication version %d (supported: 1..%d)", env.ReplicationVersion, f.supported)
+	}
+
+	state := make(map[string]kvEntry, len(env.State))
+	for k, v := range env.State {
+		state[k] = v
+	}
+	applied := make(map[string]appliedOp, len(env.AppliedOps))
+	for k, v := range env.AppliedOps {
+		applied[k] = v
+	}
+
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.state = snap.State
-	if f.state == nil {
-		f.state = make(map[string]kvEntry)
-	}
-	f.applied = snap.AppliedOps
-	if f.applied == nil {
-		f.applied = make(map[string]appliedOp)
-	}
-	f.appliedIndex = snap.AppliedIndex
-	f.appliedTerm = snap.AppliedTerm
+	f.product = env.Product
+	f.state = state
+	f.applied = applied
+	f.appliedIndex = env.RaftIndex
+	f.appliedTerm = env.RaftTerm
 	return nil
 }
 
-type snapshotState struct {
-	Version      int                  `json:"version"`
-	State        map[string]kvEntry   `json:"state"`
-	AppliedOps   map[string]appliedOp `json:"applied_ops"`
-	AppliedIndex uint64               `json:"applied_index"`
-	AppliedTerm  uint64               `json:"applied_term"`
-}
-
 type kvSnapshot struct {
-	state    map[string]kvEntry
-	applied  map[string]appliedOp
-	index    uint64
-	term     uint64
-	released bool
+	product   string
+	supported int
+	state     map[string]kvEntry
+	applied   map[string]appliedOp
+	index     uint64
+	term      uint64
+	released  bool
 }
 
 var _ raft.FSMSnapshot = (*kvSnapshot)(nil)
 
-// Persist writes the canonical snapshot (JSON map keys are sorted by
-// encoding/json, so the bytes are deterministic).
+// Persist writes the canonical SnapshotEnvelope (JSON map keys are sorted by
+// encoding/json, so equal semantic state always produces equal bytes). The
+// replication version recorded is the producing node's supported schema max.
 func (s *kvSnapshot) Persist(sink raft.SnapshotSink) error {
-	enc := json.NewEncoder(sink)
-	if err := enc.Encode(snapshotState{Version: Version, State: s.state, AppliedOps: s.applied, AppliedIndex: s.index, AppliedTerm: s.term}); err != nil {
+	env := SnapshotEnvelope{
+		FormatVersion:      SnapshotFormatVersion,
+		ReplicationVersion: s.supported,
+		Product:            s.product,
+		RaftIndex:          s.index,
+		RaftTerm:           s.term,
+		State:              s.state,
+		AppliedOps:         s.applied,
+	}
+	b, err := env.Encode()
+	if err != nil {
+		_ = sink.Cancel()
+		return err
+	}
+	if _, err := sink.Write(b); err != nil {
 		_ = sink.Cancel()
 		return err
 	}

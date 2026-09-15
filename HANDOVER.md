@@ -26,7 +26,9 @@ The campaign's architectural boundaries are mandatory:
   human account;
 - website, HTTP API and CLI entry points authorize and invoke the same product
   service operation instead of reimplementing business logic;
-- Watchpost proves clustering locally before generic cluster code is extracted;
+- Watchpost proved clustering first; the generic cluster layer now lives in
+  `gantry-core/cluster` and is adopted by Watchpost, Trestle and Webfleet through
+  product-local adapters;
 - propagation is explicit, versioned, diffable and audited configuration or
   policy distribution, not hidden database replication; and
 - standalone installations remain fully supported throughout the campaign.

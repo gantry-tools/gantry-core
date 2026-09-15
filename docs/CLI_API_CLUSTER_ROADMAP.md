@@ -5,6 +5,30 @@ Watchpost, Watchpost Agent and Webfleet. Product handovers may reference it but
 must not carry drifting copies. Checkpoint status is evidence-based: code,
 tests, documentation and the checkpoint commit are all required.
 
+## Current architecture status
+
+The phases below record the completed campaign history. The current architecture
+is the **shared clustering layer**: the generic identity, pairing, membership,
+secure transport, targeting and fan-out contracts live in `gantry-core/cluster`
+and are consumed by Watchpost, Trestle and Webfleet through product-local
+storage, route and policy adapters. Standalone mode remains the default
+everywhere.
+
+- **COMPLETED** — peer identity/pairing/membership/transport/health in
+  `gantry-core/cluster`; product adoption by Watchpost, Trestle and Webfleet;
+  and configuration/policy propagation (export/preview/apply, profiles, drift
+  reconciliation) per Phase 6. The Watchpost/Webfleet distributed certification
+  campaign is closed.
+- **PARTIAL** — full two-sided Watchpost credential rotation; bounded Webfleet
+  DB-isolation and stale→recovery lifecycle evidence.
+- **NOT IMPLEMENTED** — Watchpost distributed scheduled-work ownership and
+  duplicate-work fencing (cluster-summary self-ownership is not fencing).
+- **FUTURE (proposed, not implemented)** — replicated durable state / database
+  HA for SQLite-backed clustered products. This is an architecture proposal
+  only; **no database replication exists in any Gantry product today**.
+  PostgreSQL-backed deployments rely on PostgreSQL-native HA (provisioned by
+  Trails) rather than a Gantry replication protocol.
+
 ## Invariants
 
 - Each website operation maps to an authenticated HTTP operation.
@@ -104,7 +128,10 @@ cluster abstractions can be designed without guessing.
 
 ## Phase 2 - Watchpost proves clustering
 
-Phase 2 implementation status: CP9-CP17 are implemented locally in Watchpost. Full release certification still requires rerunning the complete Watchpost Go 1.25 test/race/vet wall with the real dependency set; the constrained build environment used for this checkpoint could execute the cluster/store gates only via a disposable system-SQLite validation adapter.
+Phase 2 implementation status: CP9-CP17 are implemented in Watchpost and were
+exercised by the September 2026 distributed dogfood campaigns plus deterministic
+local regression coverage. The complete Watchpost Go 1.25 test/race/vet wall now
+runs in CI and is green against the real dependency set.
 
 - [x] **CP9 Boundaries and topology.** Define server-to-server clustering,
   ownership and deferred data-replication behavior separately from existing

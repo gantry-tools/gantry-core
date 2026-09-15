@@ -93,6 +93,50 @@ func TestOperationValidation(t *testing.T) {
 	}
 }
 
+func TestOperationDomainRevision(t *testing.T) {
+	// DomainRevision is an optional product-defined domain precondition,
+	// distinct from the object-scoped Revision.
+	op := Operation{
+		ID: "op", Product: "watchpost", Version: Version, Kind: KindSet,
+		ObjectKind: "key", ObjectID: "edge", Revision: 7,
+		Payload: json.RawMessage(`{"value":"A"}`),
+	}
+	b, err := op.Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// 0-valued DomainRevision is omitted from the canonical encoding, so
+	// existing operations are byte-identical.
+	if bytes.Contains(b, []byte("domain_revision")) {
+		t.Fatal("zero DomainRevision must be omitted from canonical encoding")
+	}
+	got, err := DecodeOperation(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.DomainRevision != 0 || got.Revision != 7 {
+		t.Fatalf("precondition round-trip mismatch: revision=%d domain_revision=%d", got.Revision, got.DomainRevision)
+	}
+
+	// With a non-zero DomainRevision it is part of the canonical operation.
+	op2 := Operation{
+		ID: "op2", Product: "watchpost", Version: Version, Kind: KindSet,
+		ObjectKind: "key", ObjectID: "edge", DomainRevision: 17,
+		Payload: json.RawMessage(`{"value":"A"}`),
+	}
+	b2, err := op2.Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(b2, []byte(`"domain_revision":17`)) {
+		t.Fatal("non-zero DomainRevision must be present in canonical encoding")
+	}
+	got2, err := DecodeOperation(b2)
+	if err != nil || got2.DomainRevision != 17 {
+		t.Fatalf("DomainRevision round-trip failed: %+v err=%v", got2, err)
+	}
+}
+
 func TestOperationDigest(t *testing.T) {
 	a := Operation{Payload: json.RawMessage(`{"value":"A"}`)}
 	b := Operation{Payload: json.RawMessage(`{"value":"B"}`)}

@@ -41,17 +41,24 @@ type CommittedMeta struct {
 // canonical encodings of Operation values - never SQL statements, HTTP
 // requests, closures or locally allocated row IDs.
 type Operation struct {
-	ID         string          `json:"id"`          // unique; survives leadership changes
-	Product    string          `json:"product"`     // namespace (e.g. "watchpost")
-	Version    int             `json:"version"`     // replication operation schema version
-	Kind       string          `json:"kind"`        // e.g. "kv.set"
-	ObjectKind string          `json:"object_kind"` // e.g. "key"
-	ObjectID   string          `json:"object_id"`   // stable explicit identity
-	Revision   int64           `json:"revision"`    // expected/precondition revision (0 = none)
-	Payload    json.RawMessage `json:"payload"`
-	OriginNode string          `json:"origin_node"` // proposing node
-	Actor      string          `json:"actor,omitempty"`
-	Committed  CommittedMeta   `json:"committed"`
+	ID         string `json:"id"`          // unique; survives leadership changes
+	Product    string `json:"product"`     // namespace (e.g. "watchpost")
+	Version    int    `json:"version"`     // replication operation schema version
+	Kind       string `json:"kind"`        // e.g. "kv.set"
+	ObjectKind string `json:"object_kind"` // e.g. "key"
+	ObjectID   string `json:"object_id"`   // stable explicit identity
+	Revision   int64  `json:"revision"`    // object-scoped precondition revision (0 = none)
+	// DomainRevision is an optional precondition on the revision of a
+	// product-defined semantic domain relevant to the operation (e.g. the
+	// Watchpost dependency graph), distinct from the object-scoped Revision.
+	// 0 = no semantic-domain precondition; > 0 = the operation was validated
+	// against that revision of the domain. It is a generic, narrowly scoped
+	// contract; product adapters define which domain (if any) applies.
+	DomainRevision int64           `json:"domain_revision,omitempty"`
+	Payload        json.RawMessage `json:"payload"`
+	OriginNode     string          `json:"origin_node"` // proposing node
+	Actor          string          `json:"actor,omitempty"`
+	Committed      CommittedMeta   `json:"committed"`
 }
 
 // Digest returns the canonical digest of the operation payload.

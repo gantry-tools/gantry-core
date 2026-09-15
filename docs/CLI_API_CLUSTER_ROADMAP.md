@@ -261,10 +261,13 @@ proposed layer is never mistaken for an existing capability.
   membership; durable operation-ID idempotency; fail-closed version handling;
   PostgreSQL deployments use PostgreSQL-native HA (no Gantry database
   replication layer). Evidence: `docs/REPLICATED_STATE_ARCHITECTURE.md`.
-- [ ] **7B Generic replicated-state harness.** Consensus/persistence feasibility
-  spike, logical operation contract, deterministic KV state machine, durable
-  idempotency, quorum/fault/restart/membership/version matrices over local
-  1/2/3/4/5-node clusters. **NEXT.**
+- [x] **7B Generic replicated-state harness.** Consensus/persistence feasibility
+  spike (bbolt-backed log/stable store), logical operation contract,
+  deterministic KV state machine, durable operation-ID idempotency, follower
+  forwarding + stale-leader fencing, and quorum/fault/restart/membership/
+  snapshot/version matrices over local 1/2/3/4/5-node clusters. The generic
+  machinery lives in `replication/`; the proving KV harness is product-
+  independent and fully deterministic. **No product tables are replicated.**
 - [ ] **7C Snapshot/catch-up/membership/versioning.** Filtered logical
   snapshots, learners, compaction, membership changes, replication-schema
   negotiation, node-local-state exclusion certification.

@@ -39,16 +39,26 @@ type wireResponse struct {
 	Payload json.RawMessage `json:"payload,omitempty"`
 }
 
+// PeerCredentialSource resolves the outbound credential to present when
+// authenticating to a specific peer. Products with pairwise credentials (e.g.
+// Watchpost stores a different cluster_members.outbound_secret per peer) must
+// provide this; a single process-global secret cannot authenticate a genuine
+// multi-peer cluster correctly.
+type PeerCredentialSource interface {
+	OutboundCredential(ctx context.Context, peer raft.ServerID) (string, error)
+}
+
 // NetTransportOptions configures a production Raft transport over
 // Gantry-authenticated TCP connections.
 type NetTransportOptions struct {
 	ID              raft.ServerID
-	Address         raft.ServerAddress // advertised listen address
-	Listener        net.Listener       // optional; defaults to tcp listen
-	TLSConfig       *tls.Config        // required in production; protects the channel
-	Authenticator   PeerAuthenticator  // binds connections to Gantry identity (both directions)
-	Membership      MembershipChecker  // revalidation + capability source
-	Secret          string             // local outbound secret for dialing peers
+	Address         raft.ServerAddress   // advertised listen address
+	Listener        net.Listener         // optional; defaults to tcp listen
+	TLSConfig       *tls.Config          // required in production; protects the channel
+	Authenticator   PeerAuthenticator    // binds connections to Gantry identity (both directions)
+	Membership      MembershipChecker    // revalidation + capability source
+	Secret          string               // static outbound secret (Memory/test transport only)
+	PeerCredentials PeerCredentialSource // per-peer outbound credential resolver (production)
 	Protocol        int
 	Capabilities    Capabilities // advertised
 	DialTimeout     time.Duration
@@ -60,6 +70,15 @@ type NetTransportOptions struct {
 	// identity binding still applies either way; this flag only disables
 	// encryption, never authentication.
 	InsecureAllowPlaintext bool
+}
+
+// outboundSecret resolves the credential to present to peer: the peer-aware
+// source when configured, otherwise the static transport secret.
+func (t *NetTransport) outboundSecret(ctx context.Context, peer raft.ServerID) (string, error) {
+	if t.opts.PeerCredentials != nil {
+		return t.opts.PeerCredentials.OutboundCredential(ctx, peer)
+	}
+	return t.secret, nil
 }
 
 // NetTransport implements raft.Transport over authenticated long-lived TCP
@@ -324,7 +343,12 @@ func (t *NetTransport) dial(ctx context.Context, target raft.ServerAddress, expe
 		_ = conn.Close()
 		return nil, err
 	}
-	req, err := buildHandshake(t.opts.ID, t.opts.ID, t.localAddr, t.opts.Protocol, t.opts.Capabilities, t.secret, nonce, time.Now())
+	secret, err := t.outboundSecret(ctx, expected)
+	if err != nil {
+		_ = conn.Close()
+		return nil, fmt.Errorf("replication: resolve outbound credential for %s: %w", expected, err)
+	}
+	req, err := buildHandshake(t.opts.ID, t.opts.ID, t.localAddr, t.opts.Protocol, t.opts.Capabilities, secret, nonce, time.Now())
 	if err != nil {
 		_ = conn.Close()
 		return nil, err
@@ -420,12 +444,17 @@ func (t *NetTransport) serveConn(raw net.Conn) {
 	hr := handshakeResponse{Result: AuthResult{Allowed: false, Reason: "authentication failed"}}
 	if err == nil && res.Allowed {
 		// Reciprocate: prove THIS node's Gantry identity to the dialer so
-		// authentication is mutual.
+		// authentication is mutual. The reciprocal proof uses the credential for
+		// the authenticated peer (pairwise credentials resolve per peer).
+		secret, serr := t.outboundSecret(context.Background(), req.NodeID)
+		if serr != nil {
+			return
+		}
 		snonce, err := newNonce()
 		if err != nil {
 			return
 		}
-		sauth, err := buildHandshake(t.opts.ID, t.opts.ID, t.localAddr, t.opts.Protocol, t.opts.Capabilities, t.secret, snonce, time.Now())
+		sauth, err := buildHandshake(t.opts.ID, t.opts.ID, t.localAddr, t.opts.Protocol, t.opts.Capabilities, secret, snonce, time.Now())
 		if err != nil {
 			return
 		}

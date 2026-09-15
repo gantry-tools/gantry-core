@@ -85,6 +85,14 @@ type AuthRequest struct {
 	Timestamp      string             `json:"timestamp"` // RFC3339Nano
 	Nonce          string             `json:"nonce"`
 	Signature      string             `json:"signature"`
+	// PresentedSecret is the peer credential presented at connection
+	// establishment (the same value the signature was computed with). It is
+	// NOT part of the signed body. Hash-stored credential verifiers (e.g. a
+	// product authenticator over cluster_members) use it to check the presented
+	// secret's digest and to recompute the signature; reference authenticators
+	// that store plaintext secrets ignore it. It must only travel over the
+	// authenticated (TLS) channel.
+	PresentedSecret string `json:"presented_secret,omitempty"`
 }
 
 // AuthResult is the response to a handshake.
@@ -124,7 +132,28 @@ func buildHandshake(nodeID, raftID raft.ServerID, addr raft.ServerAddress, proto
 	return &AuthRequest{
 		NodeID: nodeID, RaftServerID: raftID, RaftServerAddr: addr,
 		Protocol: protocol, Capabilities: caps, Timestamp: timestamp, Nonce: nonce, Signature: sig,
+		PresentedSecret: secret,
 	}, nil
+}
+
+// SignHandshake builds and signs a connection-establishment handshake for the
+// given node identity and capabilities, carrying the presented secret. Product
+// authenticators and tests use it to construct handshakes.
+func SignHandshake(secret string, nodeID, raftID raft.ServerID, addr raft.ServerAddress, protocol int, caps Capabilities, nonce string, now time.Time) (*AuthRequest, error) {
+	return buildHandshake(nodeID, raftID, addr, protocol, caps, secret, nonce, now)
+}
+
+// VerifyHandshakeSignature verifies an AuthRequest's signature against a peer
+// secret using the canonical handshake signing format. Product authenticators
+// (e.g. a membership-backed Watchpost authenticator) use it to authenticate
+// connection-establishment handshakes after checking the presented secret's
+// digest against their stored credential hash.
+func VerifyHandshakeSignature(secret string, in AuthRequest) bool {
+	body, err := json.Marshal(authBody{NodeID: in.NodeID, RaftServerID: in.RaftServerID, RaftServerAddr: in.RaftServerAddr, Protocol: in.Protocol, Capabilities: in.Capabilities})
+	if err != nil {
+		return false
+	}
+	return verifyHandshakeSignature(secret, in.Timestamp, in.Nonce, in.NodeID, body, in.Signature)
 }
 
 func handshakeSignature(secret, timestamp, nonce string, requestID raft.ServerID, body []byte) string {

@@ -276,9 +276,25 @@ proposed layer is never mistaken for an existing capability.
   catch-up-before-promotion; full voter membership lifecycle; replication-schema
   negotiation via explicit capabilities with rolling-version voter gating and
   fail-closed incompatibility. See `replication/`.
-- [ ] **7D First Watchpost replicated-state adapter.** Smallest valid semantic
-  slice after dependency audit (options A-D in the architecture decision);
-  standalone preserved; no secrets initially.
+- **7D Watchpost replicated-state adapter.**
+  - [x] **CP7D-0 Production integration design.** Smallest closed slice is
+    `posts` (+ `rules` only if the replicated-but-non-executing missing_policy
+    gate passes); identity/ownership semantics; production transport layering;
+    capability authentication; membership ordering; snapshot trust model.
+  - [x] **CP7D-1 Authenticated production transport/security.** Gantry-signed
+    connection-establishment handshake binding raft.ServerID to the
+    authenticated node; long-lived framed transport (AppendEntries/
+    RequestVote/InstallSnapshot streaming, reconnect, malformed-frame and
+    revoked/disabled/incompatible rejection, membership revalidation);
+    authenticated capability source driving voter schema gating (learners do
+    not gate); learner/voter lifecycle over real TCP; proposal forwarding kept
+    on the application layer with durable ambiguous-response resolution. The
+    in-process Fabric remains the deterministic test transport only.
+  - [ ] **CP7D-2 First Watchpost semantic adapter.** Smallest valid slice
+    (`posts`, or `posts + rules` if the missing_policy gate passes); standalone
+    preserved; no secrets initially; deterministic apply; committed-apply
+    failure contract; semantic product snapshot.
+
 - [ ] **7E Expand Watchpost replicated surface.** Identity migrations where
   required; schedule-definition/runtime-state split; secret-reference/encryption
   design; audit/history semantic classification.

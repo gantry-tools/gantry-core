@@ -33,6 +33,11 @@ The campaign's architectural boundaries are mandatory:
   policy distribution, not hidden database replication; and
 - standalone installations remain fully supported throughout the campaign.
 
+Phase 7 (replicated durable state) is future work. The frozen architecture
+decision lives in `docs/REPLICATED_STATE_ARCHITECTURE.md`; no database
+replication is implemented or claimed in any product. Do not describe the
+replication layer as existing until it is implemented and certified.
+
 ## Release state
 
 - Released stable: **v0.2.0** (stable public preview).

@@ -23,11 +23,12 @@ everywhere.
   DB-isolation and stale→recovery lifecycle evidence.
 - **NOT IMPLEMENTED** — Watchpost distributed scheduled-work ownership and
   duplicate-work fencing (cluster-summary self-ownership is not fencing).
-- **FUTURE (proposed, not implemented)** — replicated durable state / database
-  HA for SQLite-backed clustered products. This is an architecture proposal
-  only; **no database replication exists in any Gantry product today**.
-  PostgreSQL-backed deployments rely on PostgreSQL-native HA (provisioned by
-  Trails) rather than a Gantry replication protocol.
+- **FUTURE (not implemented)** — replicated durable state / database HA for
+  SQLite-backed clustered products. Phase 7A recorded the frozen architecture
+  (`docs/REPLICATED_STATE_ARCHITECTURE.md`); **no database replication exists in
+  any Gantry product today**. PostgreSQL-backed deployments rely on
+  PostgreSQL-native HA (provisioned by Trails) rather than a Gantry replication
+  protocol.
 
 ## Invariants
 
@@ -246,6 +247,38 @@ Phase 5 acceptance: generated and CI-pinned coverage matrices now replace the sm
   UI/API/CLI parity.
 
 Phase 6 acceptance: shared propagation is now a configuration/policy distribution layer rather than database replication; Watchpost, Trestle and Webfleet expose declared product adapters, dry-run/apply/history/profile workflows, scheduled drift evaluation and fail-closed automatic reconciliation. Core certification covers fresh three-node distribution, clean drift, partitions, interruption/restart, stale/conflicting revisions, compatibility, secret/permission blockers, revocation and rollback. Product generated API/CLI matrices include the propagation surface, and runtime/history data remains explicitly node-local. See `docs/PHASE6_CERTIFICATION.md`.
+
+## Phase 7 - Replicated durable state (future)
+
+Status is tracked against the frozen architecture decision in
+`docs/REPLICATED_STATE_ARCHITECTURE.md`. **No database replication is implemented
+or claimed in any product.** This phase is future work, recorded here so the
+proposed layer is never mistaken for an existing capability.
+
+- [x] **7A Architecture decision.** Frozen: `hashicorp/raft` as the embedded
+  consensus engine while Gantry owns the semantic operation layer above it;
+  filtered logical snapshots; voting membership separated from cluster
+  membership; durable operation-ID idempotency; fail-closed version handling;
+  PostgreSQL deployments use PostgreSQL-native HA (no Gantry database
+  replication layer). Evidence: `docs/REPLICATED_STATE_ARCHITECTURE.md`.
+- [ ] **7B Generic replicated-state harness.** Consensus/persistence feasibility
+  spike, logical operation contract, deterministic KV state machine, durable
+  idempotency, quorum/fault/restart/membership/version matrices over local
+  1/2/3/4/5-node clusters. **NEXT.**
+- [ ] **7C Snapshot/catch-up/membership/versioning.** Filtered logical
+  snapshots, learners, compaction, membership changes, replication-schema
+  negotiation, node-local-state exclusion certification.
+- [ ] **7D First Watchpost replicated-state adapter.** Smallest valid semantic
+  slice after dependency audit (options A-D in the architecture decision);
+  standalone preserved; no secrets initially.
+- [ ] **7E Expand Watchpost replicated surface.** Identity migrations where
+  required; schedule-definition/runtime-state split; secret-reference/encryption
+  design; audit/history semantic classification.
+- [ ] **7F PostgreSQL HA contract.** Trestle, Webfleet and Trails
+  provisioning/verification; no Gantry database replication for PostgreSQL.
+
+Cortex and Warden remain outside Phase 7 unless they first become cluster
+participants.
 
 ## Checkpoint discipline
 

@@ -268,9 +268,14 @@ proposed layer is never mistaken for an existing capability.
   snapshot/version matrices over local 1/2/3/4/5-node clusters. The generic
   machinery lives in `replication/`; the proving KV harness is product-
   independent and fully deterministic. **No product tables are replicated.**
-- [ ] **7C Snapshot/catch-up/membership/versioning.** Filtered logical
-  snapshots, learners, compaction, membership changes, replication-schema
-  negotiation, node-local-state exclusion certification.
+- [x] **7C Snapshot/catch-up/membership/versioning.** Versioned semantic
+  SnapshotEnvelope with integrity and atomic validate-then-install restore;
+  node-local-state exclusion proven structurally; snapshot/log catch-up for
+  lagging and isolated learners across leader changes; compaction policy
+  (manual/admin + raft threshold, no per-node timers); learner bootstrap with
+  catch-up-before-promotion; full voter membership lifecycle; replication-schema
+  negotiation via explicit capabilities with rolling-version voter gating and
+  fail-closed incompatibility. See `replication/`.
 - [ ] **7D First Watchpost replicated-state adapter.** Smallest valid semantic
   slice after dependency audit (options A-D in the architecture decision);
   standalone preserved; no secrets initially.

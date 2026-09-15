@@ -261,8 +261,10 @@ func TestUnsupportedVersionFailsClosed(t *testing.T) {
 	}
 	op := kvSet("op-1", "foo", "A", 0)
 	op.Version = Version + 1
-	if _, err := n.Propose(context.Background(), op); err == nil || !strings.Contains(err.Error(), "unsupported replication operation version") {
-		t.Fatalf("unsupported version must fail closed, got %v", err)
+	// The proposal gate (voter schema support) or the apply gate (FSM version
+	// check) must fail closed; the exact message is implementation-detail.
+	if _, err := n.Propose(context.Background(), op); err == nil {
+		t.Fatal("unsupported version must fail closed")
 	}
 	if _, _, ok := fsmGet(t, n, "foo"); ok {
 		t.Fatal("rejected operation must not mutate state")

@@ -1,14 +1,46 @@
 package replication
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/raft"
 )
+
+// Capabilities describes what a node understands semantically. Compatibility
+// is never inferred from application version strings; it is negotiated from
+// these explicit supported-version sets.
+type Capabilities struct {
+	ID                      raft.ServerID `json:"id"`
+	OperationSchemaVersions []int         `json:"operation_schema_versions"`
+	SnapshotFormatVersions  []int         `json:"snapshot_format_versions"`
+	Features                []string      `json:"features,omitempty"`
+}
+
+// SupportsOperation reports whether the node understands replication schema v.
+func (c Capabilities) SupportsOperation(v int) bool {
+	for _, s := range c.OperationSchemaVersions {
+		if s == v {
+			return true
+		}
+	}
+	return false
+}
+
+// SupportsSnapshotFormat reports whether the node understands snapshot format f.
+func (c Capabilities) SupportsSnapshotFormat(f int) bool {
+	for _, s := range c.SnapshotFormatVersions {
+		if s == f {
+			return true
+		}
+	}
+	return false
+}
 
 // NodeOptions configures a replicated-state node. The durable/log and
 // snapshot stores are injectable so tests can run in-memory or durable.
@@ -28,6 +60,13 @@ type NodeOptions struct {
 	LeaderLeaseTimeout time.Duration
 	ProposeTimeout     time.Duration // zero => 5s
 
+	// SupportedReplicationVersion caps the operation schema versions this node
+	// advertises (default: the build's Version). SupportedSnapshotFormat is the
+	// snapshot format version (default SnapshotFormatVersion).
+	SupportedReplicationVersion int
+	SupportedSnapshotFormat     int
+	Features                    []string
+
 	Logger io.Writer
 }
 
@@ -41,6 +80,10 @@ type Node struct {
 	fsm     *KVFSM
 	fabric  *Fabric
 	timeout time.Duration
+	caps    Capabilities
+
+	mu    sync.Mutex
+	local map[string]string
 }
 
 // NewNode constructs a replicated-state node. Bootstrap is only applied when
@@ -50,7 +93,14 @@ func NewNode(opts NodeOptions) (*Node, error) {
 	if opts.LogStore == nil || opts.StableStore == nil || opts.SnapshotStore == nil || opts.Transport == nil {
 		return nil, fmt.Errorf("replication: log/stable/snapshot stores and transport are required")
 	}
-	fsm := NewKVFSM()
+	maxSchema := opts.SupportedReplicationVersion
+	if maxSchema <= 0 {
+		maxSchema = Version
+	}
+	if maxSchema > Version {
+		maxSchema = Version
+	}
+	fsm := NewKVFSMWithSchema(maxSchema)
 
 	conf := raft.DefaultConfig()
 	conf.LocalID = opts.ID
@@ -99,7 +149,25 @@ func NewNode(opts NodeOptions) (*Node, error) {
 	if timeout <= 0 {
 		timeout = 5 * time.Second
 	}
-	return &Node{id: opts.ID, addr: opts.Address, raft: r, fsm: fsm, fabric: opts.Fabric, timeout: timeout}, nil
+
+	opSchema := make([]int, 0, maxSchema)
+	for v := 1; v <= maxSchema; v++ {
+		opSchema = append(opSchema, v)
+	}
+	snapFormat := opts.SupportedSnapshotFormat
+	if snapFormat <= 0 {
+		snapFormat = SnapshotFormatVersion
+	}
+	caps := Capabilities{
+		ID:                      opts.ID,
+		OperationSchemaVersions: opSchema,
+		SnapshotFormatVersions:  []int{snapFormat},
+		Features:                opts.Features,
+	}
+	if opts.Fabric != nil {
+		opts.Fabric.RegisterCapabilities(opts.ID, caps)
+	}
+	return &Node{id: opts.ID, addr: opts.Address, raft: r, fsm: fsm, fabric: opts.Fabric, timeout: timeout, caps: caps, local: make(map[string]string)}, nil
 }
 
 // ID returns the node's stable identity.
@@ -134,6 +202,11 @@ func (n *Node) AppliedIndex() (uint64, uint64) { return n.fsm.AppliedIndex() }
 //
 // A retried operation ID resolves to the already-committed result; a retried
 // ID carrying a different payload fails closed before proposal.
+//
+// A schema-N operation is only proposal-eligible when every voting member of
+// the current raft configuration advertises support for schema N (the
+// leader-side half of the rolling-version rule; the FSM apply gate is the
+// deterministic half).
 func (n *Node) Propose(ctx context.Context, op Operation) (*ApplyResult, error) {
 	if digest, ok := n.fsm.OpKnown(op.ID); ok {
 		d, err := op.Digest()
@@ -144,8 +217,124 @@ func (n *Node) Propose(ctx context.Context, op Operation) (*ApplyResult, error) 
 			return nil, fmt.Errorf("operation id %q already applied with a different payload; refusing", op.ID)
 		}
 	}
+	if n.raft.State() == raft.Leader {
+		if err := n.requireVoterSchemaSupport(op.Version); err != nil {
+			return nil, err
+		}
+	}
 	return n.proposeLocal(ctx, op)
 }
+
+// requireVoterSchemaSupport enforces the rolling-version rule: operations at
+// schema N are not eligible to commit while any current voter cannot
+// understand schema N. Learners/non-voters are excluded from the quorum
+// contract and therefore do not gate schema activation.
+func (n *Node) requireVoterSchemaSupport(v int) error {
+	if !n.caps.SupportsOperation(v) {
+		return fmt.Errorf("node %s does not support replication schema %d", n.id, v)
+	}
+	if n.fabric == nil {
+		return nil
+	}
+	cfg, err := n.Configuration()
+	if err != nil {
+		return err
+	}
+	for _, s := range cfg {
+		if s.Suffrage != raft.Voter {
+			continue
+		}
+		caps, ok := n.fabric.CapabilitiesOf(s.ID)
+		if !ok {
+			return fmt.Errorf("voter %s capabilities unknown; failing closed", s.ID)
+		}
+		if !caps.SupportsOperation(v) {
+			return fmt.Errorf("voter %s does not support replication schema %d; schema activation blocked", s.ID, v)
+		}
+	}
+	return nil
+}
+
+// SetLocal stores a node-local value that must never be replicated. It models
+// node identity, peer credentials, pairing state, nonces, sessions, telemetry
+// and scheduler execution state, all of which are excluded from snapshots by
+// construction.
+func (n *Node) SetLocal(key, val string) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	n.local[key] = val
+}
+
+// GetLocal reads a node-local value.
+func (n *Node) GetLocal(key string) (string, bool) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	v, ok := n.local[key]
+	return v, ok
+}
+
+// LocalKeys returns the node-local keys (for exclusion assertions).
+func (n *Node) LocalKeys() []string {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	keys := make([]string, 0, len(n.local))
+	for k := range n.local {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// Capabilities returns the node's advertised replication capabilities.
+func (n *Node) Capabilities() Capabilities { return n.caps }
+
+// SetSupportedReplicationVersion models a rolling software upgrade on a live
+// node: it raises (or lowers) the operation schemas the node advertises and
+// the FSM will accept, re-registering capabilities for schema negotiation.
+func (n *Node) SetSupportedReplicationVersion(max int) {
+	if max < 1 {
+		max = 1
+	}
+	if max > Version {
+		max = Version
+	}
+	opSchema := make([]int, 0, max)
+	for v := 1; v <= max; v++ {
+		opSchema = append(opSchema, v)
+	}
+	n.caps.OperationSchemaVersions = opSchema
+	n.fsm.SetSupported(max)
+	if n.fabric != nil {
+		n.fabric.RegisterCapabilities(n.id, n.caps)
+	}
+}
+
+// ExportSnapshot returns the canonical filtered logical snapshot of the
+// replicated state. Node-local state never appears in it.
+func (n *Node) ExportSnapshot() ([]byte, error) {
+	snap, err := n.fsm.Snapshot()
+	if err != nil {
+		return nil, err
+	}
+	var buf bytes.Buffer
+	if err := snap.Persist(&memorySnapshotSink{&buf}); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// ApplySnapshot atomically installs a filtered logical snapshot into the FSM.
+// In production this path is exercised by raft's own snapshot installation
+// during catch-up; the direct form exists for deterministic harness proof.
+func (n *Node) ApplySnapshot(b []byte) error {
+	return n.fsm.Restore(io.NopCloser(bytes.NewReader(b)))
+}
+
+type memorySnapshotSink struct{ buf *bytes.Buffer }
+
+func (s *memorySnapshotSink) ID() string                  { return "memory" }
+func (s *memorySnapshotSink) Cancel() error               { return nil }
+func (s *memorySnapshotSink) Write(p []byte) (int, error) { return s.buf.Write(p) }
+func (s *memorySnapshotSink) Close() error                { return nil }
 
 // proposeLocal proposes on this node, which must be the leader.
 func (n *Node) proposeLocal(ctx context.Context, op Operation) (*ApplyResult, error) {

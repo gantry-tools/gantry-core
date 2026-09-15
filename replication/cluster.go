@@ -40,12 +40,18 @@ func NewCluster() *Cluster {
 	}
 }
 
-// AddNode creates a node. The first node is bootstrapped as the sole voter.
-// When durable is true the node persists raft term/vote state and the log to
-// dir (bbolt) and snapshots to dir/snapshots (file store); when false the log
-// and stable state are in-memory while snapshots remain file-backed so
-// snapshot install can still be exercised.
+// AddNode creates a node with default capabilities. The first node is
+// bootstrapped as the sole voter. When durable is true the node persists raft
+// term/vote state and the log to dir (bbolt) and snapshots to dir/snapshots
+// (file store); when false the log and stable state are in-memory while
+// snapshots remain file-backed so snapshot install can still be exercised.
 func (c *Cluster) AddNode(id raft.ServerID, dir string, durable bool) (*Node, error) {
+	return c.AddNodeCaps(id, dir, durable, Version, SnapshotFormatVersion, nil)
+}
+
+// AddNodeCaps is AddNode with explicit capability overrides, used to exercise
+// schema negotiation (nodes supporting different replication versions).
+func (c *Cluster) AddNodeCaps(id raft.ServerID, dir string, durable bool, maxSchema, snapFormat int, features []string) (*Node, error) {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, err
 	}
@@ -72,19 +78,22 @@ func (c *Cluster) AddNode(id raft.ServerID, dir string, durable bool) (*Node, er
 
 	bootstrap := len(c.Nodes) == 0
 	node, err := NewNode(NodeOptions{
-		ID:                 id,
-		Address:            addr,
-		Transport:          nt,
-		LogStore:           logStore,
-		StableStore:        stable,
-		SnapshotStore:      snaps,
-		Fabric:             c.Fabric,
-		Bootstrap:          bootstrap,
-		HeartbeatTimeout:   c.heartbeat,
-		ElectionTimeout:    c.election,
-		CommitTimeout:      c.commit,
-		LeaderLeaseTimeout: c.lease,
-		ProposeTimeout:     c.propose,
+		ID:                          id,
+		Address:                     addr,
+		Transport:                   nt,
+		LogStore:                    logStore,
+		StableStore:                 stable,
+		SnapshotStore:               snaps,
+		Fabric:                      c.Fabric,
+		Bootstrap:                   bootstrap,
+		HeartbeatTimeout:            c.heartbeat,
+		ElectionTimeout:             c.election,
+		CommitTimeout:               c.commit,
+		LeaderLeaseTimeout:          c.lease,
+		ProposeTimeout:              c.propose,
+		SupportedReplicationVersion: maxSchema,
+		SupportedSnapshotFormat:     snapFormat,
+		Features:                    features,
 	})
 	if err != nil {
 		return nil, err

@@ -22,6 +22,7 @@ type Fabric struct {
 	byID        map[raft.ServerID]*nodeTransport
 	byAddr      map[raft.ServerAddress]*nodeTransport
 	nodes       map[raft.ServerID]*Node
+	caps        map[raft.ServerID]Capabilities
 	partitioned map[fabricEdge]bool
 	sendTimeout time.Duration
 }
@@ -34,6 +35,7 @@ func NewFabric() *Fabric {
 		byID:        make(map[raft.ServerID]*nodeTransport),
 		byAddr:      make(map[raft.ServerAddress]*nodeTransport),
 		nodes:       make(map[raft.ServerID]*Node),
+		caps:        make(map[raft.ServerID]Capabilities),
 		partitioned: make(map[fabricEdge]bool),
 		sendTimeout: 500 * time.Millisecond,
 	}
@@ -52,6 +54,23 @@ func (f *Fabric) RegisterNode(n *Node) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.nodes[n.id] = n
+}
+
+// RegisterCapabilities records a node's advertised replication capabilities
+// (schema negotiation input). Compatibility is never inferred from version
+// strings.
+func (f *Fabric) RegisterCapabilities(id raft.ServerID, c Capabilities) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.caps[id] = c
+}
+
+// CapabilitiesOf returns a node's advertised capabilities.
+func (f *Fabric) CapabilitiesOf(id raft.ServerID) (Capabilities, bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	c, ok := f.caps[id]
+	return c, ok
 }
 
 // Partition drops all messages from -> to (one direction only).

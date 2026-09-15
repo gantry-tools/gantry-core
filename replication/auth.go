@@ -205,12 +205,12 @@ func (m *MemoryPeerAuthenticator) SetCapabilities(id raft.ServerID, c Capabiliti
 
 // consumeNonce rejects a replayed nonce for the same authenticated node and
 // records a fresh one with an expiry bounded by the freshness window. Expired
-// entries are pruned on every call, so the store is bounded.
+// entries are pruned on every call, so the store is bounded to the freshness
+// window.
 func (m *MemoryPeerAuthenticator) consumeNonce(nodeID raft.ServerID, nonce string, now time.Time) error {
-	cutoff := now.Add(-handshakeSkewWindow)
 	seen := m.seen[nodeID]
 	for n, exp := range seen {
-		if exp.Before(cutoff) {
+		if exp.Before(now) {
 			delete(seen, n)
 		}
 	}

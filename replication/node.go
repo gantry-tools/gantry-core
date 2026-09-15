@@ -42,6 +42,21 @@ func (c Capabilities) SupportsSnapshotFormat(f int) bool {
 	return false
 }
 
+// StateMachine is the deterministic replicated state machine a Node drives.
+// KVFSM is the reference/proving implementation; products provide their own to
+// materialize committed Operations into product state. It extends raft.FSM
+// with the durable operation-ID and applied-position accessors the
+// proposal/acknowledgement contract needs.
+type StateMachine interface {
+	raft.FSM
+	// OpKnown reports whether an operation ID has been applied and its digest.
+	OpKnown(id string) (string, bool)
+	// AppliedIndex returns the last applied raft index and term.
+	AppliedIndex() (uint64, uint64)
+}
+
+var _ StateMachine = (*KVFSM)(nil)
+
 // NodeOptions configures a replicated-state node. The durable/log and
 // snapshot stores are injectable so tests can run in-memory or durable.
 type NodeOptions struct {
@@ -52,7 +67,10 @@ type NodeOptions struct {
 	StableStore   raft.StableStore
 	SnapshotStore raft.SnapshotStore
 	Fabric        *Fabric // nil for standalone
-	Bootstrap     bool    // bootstrap this node as the sole voter (empty store only)
+	// FSM is the deterministic product state machine. Nil uses the KVFSM
+	// reference implementation.
+	FSM       StateMachine
+	Bootstrap bool // bootstrap this node as the sole voter (empty store only)
 
 	HeartbeatTimeout   time.Duration // zero => defaults
 	ElectionTimeout    time.Duration
@@ -82,7 +100,7 @@ type Node struct {
 	id      raft.ServerID
 	addr    raft.ServerAddress
 	raft    *raft.Raft
-	fsm     *KVFSM
+	fsm     StateMachine
 	fabric  *Fabric
 	timeout time.Duration
 	caps    Capabilities
@@ -106,7 +124,10 @@ func NewNode(opts NodeOptions) (*Node, error) {
 	if maxSchema > Version {
 		maxSchema = Version
 	}
-	fsm := NewKVFSMWithSchema(maxSchema)
+	fsm := opts.FSM
+	if fsm == nil {
+		fsm = NewKVFSMWithSchema(maxSchema)
+	}
 
 	conf := raft.DefaultConfig()
 	conf.LocalID = opts.ID
@@ -197,7 +218,7 @@ func (n *Node) Leader() (raft.ServerAddress, raft.ServerID) { return n.raft.Lead
 
 // FSM exposes the deterministic state machine (used by the harness to assert
 // replicated state).
-func (n *Node) FSM() *KVFSM { return n.fsm }
+func (n *Node) FSM() StateMachine { return n.fsm }
 
 // LastIndex returns the highest index in the node's log (after snapshots).
 func (n *Node) LastIndex() uint64 { return n.raft.LastIndex() }
@@ -312,7 +333,9 @@ func (n *Node) SetSupportedReplicationVersion(max int) {
 		opSchema = append(opSchema, v)
 	}
 	n.caps.OperationSchemaVersions = opSchema
-	n.fsm.SetSupported(max)
+	if kf, ok := n.fsm.(*KVFSM); ok {
+		kf.SetSupported(max)
+	}
 	if n.fabric != nil {
 		n.fabric.RegisterCapabilities(n.id, n.caps)
 	}

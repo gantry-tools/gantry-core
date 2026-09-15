@@ -111,7 +111,11 @@ func proposeSuccess(t *testing.T, c *Cluster, op Operation) *ApplyResult {
 
 func fsmGet(t *testing.T, n *Node, key string) (string, int64, bool) {
 	t.Helper()
-	v, r, ok := n.FSM().Get(key)
+	kf, ok := n.FSM().(*KVFSM)
+	if !ok {
+		t.Fatalf("node %s FSM is not the KVFSM reference", n.ID())
+	}
+	v, r, ok := kf.Get(key)
 	return v, r, ok
 }
 

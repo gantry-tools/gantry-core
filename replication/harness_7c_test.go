@@ -592,8 +592,8 @@ func TestLearnerPromotionRefusedUntilCatchUp(t *testing.T) {
 		if l == nil {
 			return false
 		}
-		_, _, okLeader := l.FSM().Get("lag/key-4")
-		_, _, okLearner := c.Nodes["l"].FSM().Get("lag/key-4")
+		_, _, okLeader := l.FSM().(*KVFSM).Get("lag/key-4")
+		_, _, okLearner := c.Nodes["l"].FSM().(*KVFSM).Get("lag/key-4")
 		return okLeader && !okLearner
 	})
 

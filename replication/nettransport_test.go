@@ -1,6 +1,7 @@
 package replication
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -11,8 +12,8 @@ import (
 )
 
 // rawHandshake dials the transport and performs a handshake with the given
-// request, returning the connection and result.
-func rawHandshake(t *testing.T, addr raft.ServerAddress, req *AuthRequest) (net.Conn, AuthResult) {
+// request, returning the connection and the full (possibly rejected) response.
+func rawHandshake(t *testing.T, addr raft.ServerAddress, req *AuthRequest) (net.Conn, handshakeResponse) {
 	t.Helper()
 	conn, err := net.DialTimeout("tcp", string(addr), 3*time.Second)
 	if err != nil {
@@ -29,11 +30,11 @@ func rawHandshake(t *testing.T, addr raft.ServerAddress, req *AuthRequest) (net.
 	if typ != frameAuthResp {
 		t.Fatalf("unexpected frame %d", typ)
 	}
-	var res AuthResult
-	if err := json.Unmarshal(payload, &res); err != nil {
+	var hr handshakeResponse
+	if err := json.Unmarshal(payload, &hr); err != nil {
 		t.Fatalf("decode auth resp: %v", err)
 	}
-	return conn, res
+	return conn, hr
 }
 
 func baseAuthReq(nodeID raft.ServerID, secret string, protocol int, caps Capabilities) *AuthRequest {
@@ -44,21 +45,57 @@ func baseAuthReq(nodeID raft.ServerID, secret string, protocol int, caps Capabil
 	return req
 }
 
-func TestNetTransportHandshakeAuth(t *testing.T) {
+// authReq builds a handshake with a caller-chosen nonce (freshness for replay
+// tests), so the signature is computed over the actual nonce used.
+func authReq(nodeID raft.ServerID, secret string, protocol int, caps Capabilities, nonce string) *AuthRequest {
+	req, err := buildHandshake(nodeID, nodeID, raft.ServerAddress("127.0.0.1:1"), protocol, caps, secret, nonce, time.Now())
+	if err != nil {
+		panic(err)
+	}
+	return req
+}
+
+func newTestAuth(t *testing.T, nodes ...raft.ServerID) (*MemoryPeerAuthenticator, *MemoryMembership, int) {
+	t.Helper()
 	protocol := Version
 	auth := NewMemoryPeerAuthenticator(protocol)
 	membership := NewMemoryMembership()
-	id := raft.ServerID("n1")
-	secret := "secret-n1"
-	caps := Capabilities{ID: id, OperationSchemaVersions: []int{1, Version}, SnapshotFormatVersions: []int{SnapshotFormatVersion}}
-	auth.SetSecret(id, secret)
-	auth.SetMembership(id, MembershipActive)
-	auth.SetCapabilities(id, caps)
-	membership.Set(id, MembershipStatus{State: MembershipActive, Capabilities: caps, Protocol: protocol})
+	for _, id := range nodes {
+		caps := Capabilities{ID: id, OperationSchemaVersions: []int{1, Version}, SnapshotFormatVersions: []int{SnapshotFormatVersion}}
+		auth.SetSecret(id, "secret-"+string(id))
+		auth.SetMembership(id, MembershipActive)
+		auth.SetReplicationEnabled(id, true)
+		auth.SetCapabilities(id, caps)
+		membership.Set(id, MembershipStatus{State: MembershipActive, Capabilities: caps, Protocol: protocol, ReplicationEnabled: true})
+	}
+	return auth, membership, protocol
+}
 
+func TestNetTransportRequiresTLSOrExplicitInsecure(t *testing.T) {
+	auth, membership, protocol := newTestAuth(t, "n1")
+	if _, err := NewNetTransport(NetTransportOptions{
+		ID: "n1", Address: "127.0.0.1:0", Authenticator: auth, Membership: membership,
+		Secret: "s", Protocol: protocol, Capabilities: Capabilities{ID: "n1"},
+	}); err == nil {
+		t.Fatal("plaintext transport must be rejected without explicit insecure opt-in")
+	}
 	nt, err := NewNetTransport(NetTransportOptions{
-		ID: id, Address: "127.0.0.1:0", Authenticator: auth, Membership: membership,
-		Secret: secret, Protocol: protocol, Capabilities: caps, RevalidateEvery: time.Hour,
+		ID: "n1", Address: "127.0.0.1:0", Authenticator: auth, Membership: membership,
+		Secret: "s", Protocol: protocol, Capabilities: Capabilities{ID: "n1"},
+		InsecureAllowPlaintext: true,
+	})
+	if err != nil {
+		t.Fatalf("explicit insecure mode must be allowed: %v", err)
+	}
+	nt.Close()
+}
+
+func TestNetTransportHandshakeAuth(t *testing.T) {
+	auth, _, protocol := newTestAuth(t, "n1")
+	nt, err := NewNetTransport(NetTransportOptions{
+		ID: "n1", Address: "127.0.0.1:0", Authenticator: auth, Protocol: protocol,
+		Secret: "secret-n1", Capabilities: Capabilities{ID: "n1"}, RevalidateEvery: time.Hour,
+		InsecureAllowPlaintext: true,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -66,64 +103,176 @@ func TestNetTransportHandshakeAuth(t *testing.T) {
 	defer nt.Close()
 	addr := nt.LocalAddr()
 
-	// Valid handshake is allowed.
-	conn, res := rawHandshake(t, addr, baseAuthReq(id, secret, protocol, caps))
-	if !res.Allowed {
-		t.Fatalf("valid handshake rejected: %s", res.Reason)
+	// Valid handshake is allowed, and the server proves its own identity.
+	conn, hr := rawHandshake(t, addr, baseAuthReq("n1", "secret-n1", protocol, Capabilities{ID: "n1"}))
+	if !hr.Result.Allowed {
+		t.Fatalf("valid handshake rejected: %s", hr.Result.Reason)
+	}
+	if hr.ServerAuth == nil {
+		t.Fatal("server must reciprocate with its own identity proof")
+	}
+	if err := auth.VerifyPeer(context.Background(), "n1", *hr.ServerAuth); err != nil {
+		t.Fatalf("server identity proof failed: %v", err)
 	}
 	_ = conn.Close()
 
 	// Wrong secret is rejected.
-	_, res = rawHandshake(t, addr, baseAuthReq(id, "wrong-secret", protocol, caps))
-	if res.Allowed {
+	_, hr = rawHandshake(t, addr, baseAuthReq("n1", "wrong", protocol, Capabilities{ID: "n1"}))
+	if hr.Result.Allowed {
 		t.Fatal("wrong-secret handshake must be rejected")
 	}
 
 	// Claiming a different raft identity than the authenticated node is rejected.
-	bad := baseAuthReq(id, secret, protocol, caps)
+	bad := baseAuthReq("n1", "secret-n1", protocol, Capabilities{ID: "n1"})
 	bad.RaftServerID = "n9"
-	_, res = rawHandshake(t, addr, bad)
-	if res.Allowed {
+	_, hr = rawHandshake(t, addr, bad)
+	if hr.Result.Allowed {
 		t.Fatal("mismatched raft identity must be rejected")
 	}
 
 	// Incompatible protocol is rejected.
-	_, res = rawHandshake(t, addr, baseAuthReq(id, secret, protocol+1, caps))
-	if res.Allowed {
+	_, hr = rawHandshake(t, addr, baseAuthReq("n1", "secret-n1", protocol+1, Capabilities{ID: "n1"}))
+	if hr.Result.Allowed {
 		t.Fatal("incompatible protocol must be rejected")
 	}
 
 	// Stale timestamp (replay) is rejected.
-	stale := baseAuthReq(id, secret, protocol, caps)
+	stale := baseAuthReq("n1", "secret-n1", protocol, Capabilities{ID: "n1"})
 	stale.Timestamp = time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano)
-	_, res = rawHandshake(t, addr, stale)
-	if res.Allowed {
+	_, hr = rawHandshake(t, addr, stale)
+	if hr.Result.Allowed {
 		t.Fatal("stale handshake must be rejected")
 	}
 
 	// Revoked membership is rejected.
-	auth.SetMembership(id, MembershipRevoked)
-	_, res = rawHandshake(t, addr, baseAuthReq(id, secret, protocol, caps))
-	if res.Allowed {
+	auth.SetMembership("n1", MembershipRevoked)
+	_, hr = rawHandshake(t, addr, baseAuthReq("n1", "secret-n1", protocol, Capabilities{ID: "n1"}))
+	if hr.Result.Allowed {
 		t.Fatal("revoked member handshake must be rejected")
 	}
 }
 
-func TestNetTransportMalformedFrameAndRevalidation(t *testing.T) {
-	protocol := Version
-	auth := NewMemoryPeerAuthenticator(protocol)
-	membership := NewMemoryMembership()
-	id := raft.ServerID("n1")
-	secret := "secret-n1"
-	caps := Capabilities{ID: id, OperationSchemaVersions: []int{1, Version}, SnapshotFormatVersions: []int{SnapshotFormatVersion}}
-	auth.SetSecret(id, secret)
-	auth.SetMembership(id, MembershipActive)
-	auth.SetCapabilities(id, caps)
-	membership.Set(id, MembershipStatus{State: MembershipActive, Capabilities: caps, Protocol: protocol})
-
+func TestNetTransportHandshakeReplay(t *testing.T) {
+	auth, _, protocol := newTestAuth(t, "n1")
 	nt, err := NewNetTransport(NetTransportOptions{
-		ID: id, Address: "127.0.0.1:0", Authenticator: auth, Membership: membership,
-		Secret: secret, Protocol: protocol, Capabilities: caps, RevalidateEvery: 100 * time.Millisecond,
+		ID: "n1", Address: "127.0.0.1:0", Authenticator: auth, Protocol: protocol,
+		Secret: "secret-n1", Capabilities: Capabilities{ID: "n1"}, RevalidateEvery: time.Hour,
+		InsecureAllowPlaintext: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer nt.Close()
+	addr := nt.LocalAddr()
+
+	req := baseAuthReq("n1", "secret-n1", protocol, Capabilities{ID: "n1"})
+
+	// First valid handshake is accepted and consumes the nonce.
+	conn, hr := rawHandshake(t, addr, req)
+	if !hr.Result.Allowed {
+		t.Fatalf("first handshake rejected: %s", hr.Result.Reason)
+	}
+	_ = conn.Close()
+
+	// Exact replay of the same signed handshake (same nonce, same timestamp)
+	// must be rejected as a replay.
+	_, hr = rawHandshake(t, addr, req)
+	if hr.Result.Allowed {
+		t.Fatal("exact handshake replay must be rejected")
+	}
+
+	// Same nonce but a modified body: the signature fails closed.
+	tampered := *req
+	tampered.RaftServerAddr = "127.0.0.1:9"
+	_, hr = rawHandshake(t, addr, &tampered)
+	if hr.Result.Allowed {
+		t.Fatal("tampered handshake must be rejected")
+	}
+
+	// A fresh nonce with a valid signature is accepted again.
+	fresh := authReq("n1", "secret-n1", protocol, Capabilities{ID: "n1"}, "nonce-2")
+	conn, hr = rawHandshake(t, addr, fresh)
+	if !hr.Result.Allowed {
+		t.Fatalf("fresh-nonce handshake rejected: %s", hr.Result.Reason)
+	}
+	_ = conn.Close()
+}
+
+func TestNetTransportMutualAuthentication(t *testing.T) {
+	auth, _, protocol := newTestAuth(t, "n1", "n2")
+	// A transport for n1; n2 dials it.
+	nt, err := NewNetTransport(NetTransportOptions{
+		ID: "n1", Address: "127.0.0.1:0", Authenticator: auth, Protocol: protocol,
+		Secret: "secret-n1", Capabilities: Capabilities{ID: "n1"}, RevalidateEvery: time.Hour,
+		InsecureAllowPlaintext: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer nt.Close()
+
+	// The server proves n1's identity to the dialer.
+	conn, hr := rawHandshake(t, nt.LocalAddr(), baseAuthReq("n2", "secret-n2", protocol, Capabilities{ID: "n2"}))
+	if !hr.Result.Allowed {
+		t.Fatalf("handshake rejected: %s", hr.Result.Reason)
+	}
+	// Dialer expects n1: the server identity proof verifies.
+	if err := auth.VerifyPeer(context.Background(), "n1", *hr.ServerAuth); err != nil {
+		t.Fatalf("expected-peer verification failed: %v", err)
+	}
+	// A dialer that expects a DIFFERENT node must reject: the endpoint proved
+	// it is n1, not the expected n2.
+	if err := auth.VerifyPeer(context.Background(), "n2", *hr.ServerAuth); err == nil {
+		t.Fatal("expected-peer / actual-peer identity mismatch must be rejected")
+	}
+	_ = conn.Close()
+}
+
+func TestNetTransportRejectsUnauthenticatedEndpoint(t *testing.T) {
+	auth, _, protocol := newTestAuth(t, "n1")
+	// A raw listener that accepts a handshake but provides no server identity
+	// proof (not a Gantry replication endpoint).
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	go func() {
+		conn, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		typ, _, err := readFrame(conn)
+		if err != nil || typ != frameAuth {
+			return
+		}
+		// Respond "allowed" but with no reciprocal identity proof.
+		out, _ := json.Marshal(handshakeResponse{Result: AuthResult{Allowed: true}})
+		_ = writeFrame(conn, frameAuthResp, out)
+	}()
+
+	// A dialing transport must reject an endpoint that provides no identity proof.
+	nt, err := NewNetTransport(NetTransportOptions{
+		ID: "n1", Address: "127.0.0.1:0", Authenticator: auth, Protocol: protocol,
+		Secret: "secret-n1", Capabilities: Capabilities{ID: "n1"}, RevalidateEvery: time.Hour,
+		InsecureAllowPlaintext: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer nt.Close()
+	if _, err := nt.getConn(context.Background(), raft.ServerAddress(ln.Addr().String()), "n1"); err == nil {
+		t.Fatal("dialing an unauthenticated endpoint must fail")
+	}
+}
+
+func TestNetTransportMalformedFrameAndCompatibilityRevalidation(t *testing.T) {
+	auth, membership, protocol := newTestAuth(t, "n1")
+	nt, err := NewNetTransport(NetTransportOptions{
+		ID: "n1", Address: "127.0.0.1:0", Authenticator: auth, Membership: membership,
+		Secret: "secret-n1", Protocol: protocol, Capabilities: Capabilities{ID: "n1"},
+		RevalidateEvery: 100 * time.Millisecond, InsecureAllowPlaintext: true,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -132,9 +281,9 @@ func TestNetTransportMalformedFrameAndRevalidation(t *testing.T) {
 	addr := nt.LocalAddr()
 
 	// Malformed frame after handshake closes the connection promptly.
-	conn, res := rawHandshake(t, addr, baseAuthReq(id, secret, protocol, caps))
-	if !res.Allowed {
-		t.Fatalf("handshake failed: %s", res.Reason)
+	conn, hr := rawHandshake(t, addr, baseAuthReq("n1", "secret-n1", protocol, Capabilities{ID: "n1"}))
+	if !hr.Result.Allowed {
+		t.Fatalf("handshake failed: %s", hr.Result.Reason)
 	}
 	if _, err := conn.Write([]byte{0xff, 0x00, 0x00, 0x00, 0x05, 'h', 'e', 'l', 'l', 'o'}); err != nil {
 		t.Fatal(err)
@@ -150,40 +299,61 @@ func TestNetTransportMalformedFrameAndRevalidation(t *testing.T) {
 	}
 	_ = conn.Close()
 
-	// Server-side revalidation terminates an active connection promptly when
-	// membership leaves the active state (authenticated membership, not the
-	// authenticator's handshake store).
-	conn2, res := rawHandshake(t, addr, baseAuthReq(id, secret, protocol, caps))
-	if !res.Allowed {
-		t.Fatalf("handshake failed: %s", res.Reason)
+	// Active connections must terminate when the authenticated membership
+	// becomes revoked, disabled, removed (unknown), protocol-incompatible, or
+	// replication no longer authorized.
+	cases := []struct {
+		name   string
+		mutate func()
+	}{
+		{"revoked", func() {
+			membership.Set("n1", MembershipStatus{State: MembershipRevoked, Capabilities: Capabilities{ID: "n1"}, Protocol: protocol, ReplicationEnabled: true})
+		}},
+		{"disabled", func() {
+			membership.Set("n1", MembershipStatus{State: MembershipDisabled, Capabilities: Capabilities{ID: "n1"}, Protocol: protocol, ReplicationEnabled: true})
+		}},
+		{"removed", func() { membership.Set("n1", MembershipStatus{}) }}, // unknown -> lookup error
+		{"protocol incompatible", func() {
+			membership.Set("n1", MembershipStatus{State: MembershipActive, Capabilities: Capabilities{ID: "n1"}, Protocol: protocol + 1, ReplicationEnabled: true})
+		}},
+		{"replication not authorized", func() {
+			membership.Set("n1", MembershipStatus{State: MembershipActive, Capabilities: Capabilities{ID: "n1"}, Protocol: protocol, ReplicationEnabled: false})
+		}},
 	}
-	membership.Set(id, MembershipStatus{State: MembershipRevoked, Capabilities: caps, Protocol: protocol})
-	conn2.SetReadDeadline(time.Now().Add(3 * time.Second))
-	buf2 := make([]byte, 1)
-	start = time.Now()
-	if _, err := conn2.Read(buf2); err == nil {
-		t.Fatal("expected connection to terminate after revocation")
+	for i, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			conn, hr := rawHandshake(t, addr, authReq("n1", "secret-n1", protocol, Capabilities{ID: "n1"}, fmt.Sprintf("reval-nonce-%d", i)))
+			if !hr.Result.Allowed {
+				t.Fatalf("handshake failed: %s", hr.Result.Reason)
+			}
+			tc.mutate()
+			conn.SetReadDeadline(time.Now().Add(3 * time.Second))
+			buf := make([]byte, 1)
+			start := time.Now()
+			for time.Now().Before(start.Add(2 * time.Second)) {
+				if _, err := conn.Read(buf); err != nil {
+					return // connection terminated
+				}
+				time.Sleep(20 * time.Millisecond)
+			}
+			t.Fatalf("active connection was not terminated after %s", tc.name)
+		})
 	}
-	if elapsed := time.Since(start); elapsed > 1500*time.Millisecond {
-		t.Fatalf("active connection was not terminated promptly after revocation: %v", elapsed)
-	}
-	_ = conn2.Close()
 }
 
 func TestNetTransportRejectsUnknownNode(t *testing.T) {
-	protocol := Version
-	auth := NewMemoryPeerAuthenticator(protocol)
-	membership := NewMemoryMembership()
+	auth, _, protocol := newTestAuth(t)
 	nt, err := NewNetTransport(NetTransportOptions{
-		ID: "n1", Address: "127.0.0.1:0", Authenticator: auth, Membership: membership,
-		Secret: "s", Protocol: protocol, Capabilities: Capabilities{ID: "n1"}, RevalidateEvery: time.Hour,
+		ID: "n1", Address: "127.0.0.1:0", Authenticator: auth, Protocol: protocol,
+		Secret: "s", Capabilities: Capabilities{ID: "n1"}, RevalidateEvery: time.Hour,
+		InsecureAllowPlaintext: true,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer nt.Close()
-	_, res := rawHandshake(t, nt.LocalAddr(), baseAuthReq("ghost", "s", protocol, Capabilities{ID: "ghost"}))
-	if res.Allowed {
+	_, hr := rawHandshake(t, nt.LocalAddr(), baseAuthReq("ghost", "s", protocol, Capabilities{ID: "ghost"}))
+	if hr.Result.Allowed {
 		t.Fatal("unknown node must be rejected")
 	}
 	_ = fmt.Sprintf

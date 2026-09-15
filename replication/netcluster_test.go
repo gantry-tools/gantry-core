@@ -25,11 +25,12 @@ func newNetCluster(t *testing.T, n int) (*Cluster, *MemoryPeerAuthenticator, *Me
 		caps := Capabilities{ID: id, OperationSchemaVersions: []int{1, Version}, SnapshotFormatVersions: []int{SnapshotFormatVersion}}
 		auth.SetSecret(id, secret)
 		auth.SetMembership(id, MembershipActive)
+		auth.SetReplicationEnabled(id, true)
 		auth.SetCapabilities(id, caps)
-		membership.Set(id, MembershipStatus{State: MembershipActive, Capabilities: caps, Protocol: protocol})
+		membership.Set(id, MembershipStatus{State: MembershipActive, Capabilities: caps, Protocol: protocol, ReplicationEnabled: true})
 		nt, err := NewNetTransport(NetTransportOptions{
 			ID: id, Address: "127.0.0.1:0", Authenticator: auth, Membership: membership,
-			Secret: secret, Protocol: protocol, Capabilities: caps, RevalidateEvery: 200 * time.Millisecond,
+			Secret: secret, Protocol: protocol, Capabilities: caps, RevalidateEvery: 200 * time.Millisecond, InsecureAllowPlaintext: true,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -88,11 +89,12 @@ func TestNetworkClusterInstallSnapshot(t *testing.T) {
 	caps := Capabilities{ID: id, OperationSchemaVersions: []int{1, Version}, SnapshotFormatVersions: []int{SnapshotFormatVersion}}
 	auth.SetSecret(id, secret)
 	auth.SetMembership(id, MembershipActive)
+	auth.SetReplicationEnabled(id, true)
 	auth.SetCapabilities(id, caps)
-	membership.Set(id, MembershipStatus{State: MembershipActive, Capabilities: caps, Protocol: protocol})
+	membership.Set(id, MembershipStatus{State: MembershipActive, Capabilities: caps, Protocol: protocol, ReplicationEnabled: true})
 	nt, err := NewNetTransport(NetTransportOptions{
 		ID: id, Address: "127.0.0.1:0", Authenticator: auth, Membership: membership,
-		Secret: secret, Protocol: protocol, Capabilities: caps, RevalidateEvery: 200 * time.Millisecond,
+		Secret: secret, Protocol: protocol, Capabilities: caps, RevalidateEvery: 200 * time.Millisecond, InsecureAllowPlaintext: true,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -149,11 +151,12 @@ func TestNetworkClusterSchemaGateAuthenticated(t *testing.T) {
 		caps.SnapshotFormatVersions = []int{SnapshotFormatVersion}
 		auth.SetSecret(id, secret)
 		auth.SetMembership(id, MembershipActive)
+		auth.SetReplicationEnabled(id, true)
 		auth.SetCapabilities(id, caps)
-		membership.Set(id, MembershipStatus{State: MembershipActive, Capabilities: caps, Protocol: protocol})
+		membership.Set(id, MembershipStatus{State: MembershipActive, Capabilities: caps, Protocol: protocol, ReplicationEnabled: true})
 		nt, err := NewNetTransport(NetTransportOptions{
 			ID: id, Address: "127.0.0.1:0", Authenticator: auth, Membership: membership,
-			Secret: secret, Protocol: protocol, Capabilities: caps, RevalidateEvery: 200 * time.Millisecond,
+			Secret: secret, Protocol: protocol, Capabilities: caps, RevalidateEvery: 200 * time.Millisecond, InsecureAllowPlaintext: true,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -185,7 +188,7 @@ func TestNetworkClusterSchemaGateAuthenticated(t *testing.T) {
 	// Rolling upgrade: n1 now authenticates schema 2. Schema-2 activates.
 	caps2 := c.Nodes["n1"].Capabilities()
 	caps2.OperationSchemaVersions = []int{1, Version}
-	membership.Set("n1", MembershipStatus{State: MembershipActive, Capabilities: caps2, Protocol: protocol})
+	membership.Set("n1", MembershipStatus{State: MembershipActive, Capabilities: caps2, Protocol: protocol, ReplicationEnabled: true})
 	proposeSuccess(t, c, kvSet("op-3", "s2", "X", 0))
 	for _, id := range []raft.ServerID{"n1", "n2", "n3"} {
 		waitValue(t, c.Nodes[id], "s2", "X")
@@ -203,11 +206,12 @@ func TestNetworkClusterMembershipLifecycle(t *testing.T) {
 	caps := Capabilities{ID: id, OperationSchemaVersions: []int{1, Version}, SnapshotFormatVersions: []int{SnapshotFormatVersion}}
 	auth.SetSecret(id, secret)
 	auth.SetMembership(id, MembershipActive)
+	auth.SetReplicationEnabled(id, true)
 	auth.SetCapabilities(id, caps)
-	membership.Set(id, MembershipStatus{State: MembershipActive, Capabilities: caps, Protocol: protocol})
+	membership.Set(id, MembershipStatus{State: MembershipActive, Capabilities: caps, Protocol: protocol, ReplicationEnabled: true})
 	nt, err := NewNetTransport(NetTransportOptions{
 		ID: id, Address: "127.0.0.1:0", Authenticator: auth, Membership: membership,
-		Secret: secret, Protocol: protocol, Capabilities: caps, RevalidateEvery: 200 * time.Millisecond,
+		Secret: secret, Protocol: protocol, Capabilities: caps, RevalidateEvery: 200 * time.Millisecond, InsecureAllowPlaintext: true,
 	})
 	if err != nil {
 		t.Fatal(err)

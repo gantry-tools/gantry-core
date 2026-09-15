@@ -26,19 +26,37 @@ const (
 // MembershipStatus is the authenticated membership + capability state of a
 // node, returned by a MembershipChecker. In production this derives from the
 // Gantry cluster membership relationship (cluster_members), not an in-memory
-// test registry.
+// test registry. ReplicationEnabled is the transport-level authorization the
+// membership relationship grants; State is its lifecycle.
 type MembershipStatus struct {
-	State        MembershipState
-	Capabilities Capabilities
-	Protocol     int
+	State              MembershipState
+	Capabilities       Capabilities
+	Protocol           int
+	ReplicationEnabled bool
 }
 
-// PeerAuthenticator verifies a connection-establishment handshake and binds
-// the authenticated Gantry node identity (raft.ServerID) to the connection.
-// A peer must not be able to authenticate as one Gantry node while presenting
-// a different Raft server identity.
+// PeerAuthenticator verifies connection-establishment handshakes and binds
+// the authenticated Gantry node identity (raft.ServerID) to the connection in
+// BOTH directions. A peer must not be able to authenticate as one Gantry node
+// while presenting a different Raft server identity.
+//
+// Replay contract: implementations MUST reject a handshake whose nonce was
+// already consumed by the same authenticated node while the nonce is within
+// the freshness window, so a captured valid handshake cannot be replayed. The
+// reference MemoryPeerAuthenticator keeps an in-memory consumed-nonce store
+// that expires after the skew window; production (Watchpost) MUST use its
+// persistent cluster nonce/replay machinery (cluster_nonces) or an equivalent
+// durable adapter so replay protection survives restart.
 type PeerAuthenticator interface {
+	// Authenticate is the accepting side: verify a dialer's identity proof,
+	// consume its nonce (replay protection), and return whether it is allowed.
 	Authenticate(ctx context.Context, in AuthRequest) (AuthResult, error)
+
+	// VerifyPeer is the dialing side: verify the accepting node's reciprocal
+	// identity proof against the expected node identity, consuming its nonce.
+	// A connection must fail if the network endpoint presents a valid
+	// credential for some other Gantry node.
+	VerifyPeer(ctx context.Context, expected raft.ServerID, in AuthRequest) error
 }
 
 // MembershipChecker supplies authenticated membership/capability state for
@@ -128,13 +146,17 @@ func verifyHandshakeSignature(secret, timestamp, nonce string, requestID raft.Se
 }
 
 // MemoryPeerAuthenticator is a reference/test PeerAuthenticator backed by
-// per-node shared secrets and membership states. Products implement the same
-// interface over the Gantry cluster_members relationship.
+// per-node shared secrets and membership states. It provides in-process
+// handshake replay protection (consumed-nonce store that expires after the
+// freshness window). Products implement the same interface over the Gantry
+// cluster_members relationship, and MUST provide durable replay state.
 type MemoryPeerAuthenticator struct {
 	mu       sync.Mutex
 	secrets  map[raft.ServerID]string
 	states   map[raft.ServerID]MembershipState
+	enabled  map[raft.ServerID]bool
 	caps     map[raft.ServerID]Capabilities
+	seen     map[raft.ServerID]map[string]time.Time
 	protocol int
 	now      func() time.Time
 }
@@ -144,7 +166,9 @@ func NewMemoryPeerAuthenticator(protocol int) *MemoryPeerAuthenticator {
 	return &MemoryPeerAuthenticator{
 		secrets:  make(map[raft.ServerID]string),
 		states:   make(map[raft.ServerID]MembershipState),
+		enabled:  make(map[raft.ServerID]bool),
 		caps:     make(map[raft.ServerID]Capabilities),
+		seen:     make(map[raft.ServerID]map[string]time.Time),
 		protocol: protocol,
 		now:      time.Now,
 	}
@@ -164,6 +188,14 @@ func (m *MemoryPeerAuthenticator) SetMembership(id raft.ServerID, state Membersh
 	m.states[id] = state
 }
 
+// SetReplicationEnabled grants/revokes the transport-level replication
+// authorization for a peer.
+func (m *MemoryPeerAuthenticator) SetReplicationEnabled(id raft.ServerID, enabled bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.enabled[id] = enabled
+}
+
 // SetCapabilities records a peer's advertised capabilities.
 func (m *MemoryPeerAuthenticator) SetCapabilities(id raft.ServerID, c Capabilities) {
 	m.mu.Lock()
@@ -171,45 +203,90 @@ func (m *MemoryPeerAuthenticator) SetCapabilities(id raft.ServerID, c Capabiliti
 	m.caps[id] = c
 }
 
-// Authenticate implements PeerAuthenticator. It enforces:
-//   - the claimed raft identity equals the authenticated node identity;
-//   - the member exists and is active;
-//   - protocol compatibility;
-//   - the signature verifies against the node's secret with a fresh
-//     timestamp/nonce (no replay).
-func (m *MemoryPeerAuthenticator) Authenticate(ctx context.Context, in AuthRequest) (AuthResult, error) {
+// consumeNonce rejects a replayed nonce for the same authenticated node and
+// records a fresh one with an expiry bounded by the freshness window. Expired
+// entries are pruned on every call, so the store is bounded.
+func (m *MemoryPeerAuthenticator) consumeNonce(nodeID raft.ServerID, nonce string, now time.Time) error {
+	cutoff := now.Add(-handshakeSkewWindow)
+	seen := m.seen[nodeID]
+	for n, exp := range seen {
+		if exp.Before(cutoff) {
+			delete(seen, n)
+		}
+	}
+	if _, ok := seen[nonce]; ok {
+		return errors.New("handshake nonce replay rejected")
+	}
+	if seen == nil {
+		seen = make(map[string]time.Time)
+	}
+	seen[nonce] = now.Add(handshakeSkewWindow)
+	m.seen[nodeID] = seen
+	return nil
+}
+
+// verifyHandshakeCommon validates identity binding, protocol, membership,
+// freshness, signature and nonce replay for an auth request against a node's
+// secret. It is shared by the accepting and dialing sides.
+func (m *MemoryPeerAuthenticator) verifyHandshakeCommon(in AuthRequest) error {
 	if in.RaftServerID != in.NodeID {
-		return AuthResult{}, errors.New("raft server identity does not match authenticated node identity")
+		return errors.New("raft server identity does not match authenticated node identity")
 	}
 	if in.Protocol != m.protocol {
-		return AuthResult{}, errors.New("incompatible replication protocol")
+		return errors.New("incompatible replication protocol")
 	}
 	m.mu.Lock()
 	secret, hasSecret := m.secrets[in.NodeID]
 	state, hasState := m.states[in.NodeID]
+	enabled, hasEnabled := m.enabled[in.NodeID]
 	m.mu.Unlock()
-	if !hasSecret || !hasState {
-		return AuthResult{}, errors.New("replication member unknown")
+	if !hasSecret || !hasState || !hasEnabled {
+		return errors.New("replication member unknown")
 	}
 	if state != MembershipActive {
-		return AuthResult{}, errors.New("replication member not active")
+		return errors.New("replication member not active")
+	}
+	if !enabled {
+		return errors.New("replication not authorized for member")
 	}
 	at, err := time.Parse(time.RFC3339Nano, in.Timestamp)
 	if err != nil {
-		return AuthResult{}, errors.New("invalid handshake timestamp")
+		return errors.New("invalid handshake timestamp")
 	}
 	now := m.now()
 	if at.Before(now.Add(-handshakeSkewWindow)) || at.After(now.Add(handshakeSkewWindow)) {
-		return AuthResult{}, errors.New("handshake outside clock-skew window")
+		return errors.New("handshake outside clock-skew window")
 	}
 	body, err := json.Marshal(authBody{NodeID: in.NodeID, RaftServerID: in.RaftServerID, RaftServerAddr: in.RaftServerAddr, Protocol: in.Protocol, Capabilities: in.Capabilities})
 	if err != nil {
-		return AuthResult{}, err
+		return err
 	}
 	if !verifyHandshakeSignature(secret, in.Timestamp, in.Nonce, in.NodeID, body, in.Signature) {
-		return AuthResult{}, errors.New("invalid replication handshake signature")
+		return errors.New("invalid replication handshake signature")
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.consumeNonce(in.NodeID, in.Nonce, now)
+}
+
+// Authenticate implements PeerAuthenticator (accepting side).
+func (m *MemoryPeerAuthenticator) Authenticate(ctx context.Context, in AuthRequest) (AuthResult, error) {
+	if err := m.verifyHandshakeCommon(in); err != nil {
+		return AuthResult{}, err
 	}
 	return AuthResult{Allowed: true, ServerAddress: in.RaftServerAddr}, nil
+}
+
+// VerifyPeer implements PeerAuthenticator (dialing side): the accepting node
+// must prove it is exactly the expected Gantry node / raft.ServerID.
+func (m *MemoryPeerAuthenticator) VerifyPeer(ctx context.Context, expected raft.ServerID, in AuthRequest) error {
+	if expected == "" {
+		return errors.New("expected peer identity is empty")
+	}
+	if in.NodeID != expected || in.RaftServerID != expected {
+		return fmt.Errorf("peer authenticated as %q but expected %q", in.NodeID, expected)
+	}
+	return m.verifyHandshakeCommon(in)
 }
 
 // MemoryMembership is a reference/test MembershipChecker + CapabilitySource.

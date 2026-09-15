@@ -40,13 +40,13 @@ type wireResponse struct {
 }
 
 // NetTransportOptions configures a production Raft transport over
-// Gantry-authenticated TCP (optionally TLS) connections.
+// Gantry-authenticated TCP connections.
 type NetTransportOptions struct {
 	ID              raft.ServerID
 	Address         raft.ServerAddress // advertised listen address
 	Listener        net.Listener       // optional; defaults to tcp listen
-	TLSConfig       *tls.Config        // optional; protects the channel
-	Authenticator   PeerAuthenticator  // binds connections to Gantry identity
+	TLSConfig       *tls.Config        // required in production; protects the channel
+	Authenticator   PeerAuthenticator  // binds connections to Gantry identity (both directions)
 	Membership      MembershipChecker  // revalidation + capability source
 	Secret          string             // local outbound secret for dialing peers
 	Protocol        int
@@ -54,6 +54,12 @@ type NetTransportOptions struct {
 	DialTimeout     time.Duration
 	SendTimeout     time.Duration
 	RevalidateEvery time.Duration
+
+	// InsecureAllowPlaintext permits an unencrypted channel. It is an explicit
+	// local/test mode only: production MUST supply TLSConfig. Mutual Gantry
+	// identity binding still applies either way; this flag only disables
+	// encryption, never authentication.
+	InsecureAllowPlaintext bool
 }
 
 // NetTransport implements raft.Transport over authenticated long-lived TCP
@@ -76,15 +82,28 @@ type NetTransport struct {
 
 var _ raft.Transport = (*NetTransport)(nil)
 
+// handshakeResponse is the accepting side's reply: the auth decision plus the
+// accepting node's OWN signed identity proof, so the dialer can authenticate
+// the server (mutual Gantry authentication).
+type handshakeResponse struct {
+	Result     AuthResult   `json:"result"`
+	ServerAuth *AuthRequest `json:"server_auth,omitempty"`
+}
+
 type peerConn struct {
-	conn net.Conn
-	mu   sync.Mutex
+	conn     net.Conn
+	expected raft.ServerID
+	mu       sync.Mutex
 }
 
 // NewNetTransport starts a NetTransport on opts.Address (or opts.Listener).
+// An unencrypted channel is only permitted with an explicit opt-in.
 func NewNetTransport(opts NetTransportOptions) (*NetTransport, error) {
 	if opts.Authenticator == nil {
 		return nil, errors.New("replication: net transport requires an authenticator")
+	}
+	if opts.TLSConfig == nil && !opts.InsecureAllowPlaintext {
+		return nil, errors.New("replication: production transport requires TLS; plaintext requires explicit InsecureAllowPlaintext (local/test only)")
 	}
 	if opts.DialTimeout <= 0 {
 		opts.DialTimeout = 5 * time.Second
@@ -181,7 +200,7 @@ func (t *NetTransport) InstallSnapshot(id raft.ServerID, target raft.ServerAddre
 	if err != nil {
 		return err
 	}
-	pc, err := t.getConn(context.Background(), target)
+	pc, err := t.getConn(context.Background(), target, id)
 	if err != nil {
 		return err
 	}
@@ -200,7 +219,7 @@ func (t *NetTransport) InstallSnapshot(id raft.ServerID, target raft.ServerAddre
 
 // roundTrip sends a request frame and decodes the typed response.
 func (t *NetTransport) roundTrip(id raft.ServerID, target raft.ServerAddress, typ byte, payload []byte, resp interface{}) error {
-	pc, err := t.getConn(context.Background(), target)
+	pc, err := t.getConn(context.Background(), target, id)
 	if err != nil {
 		return err
 	}
@@ -240,7 +259,7 @@ func (t *NetTransport) readResponse(pc *peerConn, target raft.ServerAddress, res
 	return nil
 }
 
-func (t *NetTransport) getConn(ctx context.Context, target raft.ServerAddress) (*peerConn, error) {
+func (t *NetTransport) getConn(ctx context.Context, target raft.ServerAddress, expected raft.ServerID) (*peerConn, error) {
 	t.mu.Lock()
 	if t.closed {
 		t.mu.Unlock()
@@ -252,7 +271,7 @@ func (t *NetTransport) getConn(ctx context.Context, target raft.ServerAddress) (
 	}
 	t.mu.Unlock()
 
-	pc, peerID, err := t.dial(ctx, target)
+	pc, err := t.dial(ctx, target, expected)
 	if err != nil {
 		return nil, err
 	}
@@ -267,7 +286,7 @@ func (t *NetTransport) getConn(ctx context.Context, target raft.ServerAddress) (
 		return existing, nil
 	}
 	t.conns[target] = pc
-	t.peerIDs[target] = peerID
+	t.peerIDs[target] = expected
 	return pc, nil
 }
 
@@ -281,60 +300,72 @@ func (t *NetTransport) dropConn(target raft.ServerAddress, pc *peerConn) {
 	_ = pc.conn.Close()
 }
 
-// dial opens a TCP (optionally TLS) connection and performs the Gantry
-// authenticated handshake that binds the connection to one node identity.
-func (t *NetTransport) dial(ctx context.Context, target raft.ServerAddress) (*peerConn, raft.ServerID, error) {
+// dial opens a TCP (optionally TLS) connection and performs the mutual Gantry
+// authenticated handshake: this node proves its identity to the peer, and the
+// peer must prove it is exactly the expected node before the connection is
+// used. On TLS, the channel is encrypted; node identity is always bound by the
+// Gantry handshake in both directions.
+func (t *NetTransport) dial(ctx context.Context, target raft.ServerAddress, expected raft.ServerID) (*peerConn, error) {
 	raw, err := net.DialTimeout("tcp", string(target), t.opts.DialTimeout)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	conn := net.Conn(raw)
 	if t.opts.TLSConfig != nil {
 		tc := tls.Client(conn, t.opts.TLSConfig)
 		if err := tc.Handshake(); err != nil {
 			_ = conn.Close()
-			return nil, "", err
+			return nil, err
 		}
 		conn = tc
 	}
 	nonce, err := newNonce()
 	if err != nil {
 		_ = conn.Close()
-		return nil, "", err
+		return nil, err
 	}
 	req, err := buildHandshake(t.opts.ID, t.opts.ID, t.localAddr, t.opts.Protocol, t.opts.Capabilities, t.secret, nonce, time.Now())
 	if err != nil {
 		_ = conn.Close()
-		return nil, "", err
+		return nil, err
 	}
 	body, err := json.Marshal(req)
 	if err != nil {
 		_ = conn.Close()
-		return nil, "", err
+		return nil, err
 	}
 	if err := writeFrame(conn, frameAuth, body); err != nil {
 		_ = conn.Close()
-		return nil, "", err
+		return nil, err
 	}
 	typ, payload, err := readFrame(conn)
 	if err != nil {
 		_ = conn.Close()
-		return nil, "", err
+		return nil, err
 	}
 	if typ != frameAuthResp {
 		_ = conn.Close()
-		return nil, "", fmt.Errorf("replication: unexpected auth frame %d", typ)
+		return nil, fmt.Errorf("replication: unexpected auth frame %d", typ)
 	}
-	var res AuthResult
-	if err := json.Unmarshal(payload, &res); err != nil {
+	var hr handshakeResponse
+	if err := json.Unmarshal(payload, &hr); err != nil {
 		_ = conn.Close()
-		return nil, "", err
+		return nil, err
 	}
-	if !res.Allowed {
+	if !hr.Result.Allowed {
 		_ = conn.Close()
-		return nil, "", fmt.Errorf("replication: handshake rejected: %s", res.Reason)
+		return nil, fmt.Errorf("replication: handshake rejected: %s", hr.Result.Reason)
 	}
-	return &peerConn{conn: conn}, req.RaftServerID, nil
+	if hr.ServerAuth == nil {
+		_ = conn.Close()
+		return nil, errors.New("replication: accepting peer provided no identity proof (unauthenticated endpoint)")
+	}
+	// The peer must prove it is exactly the expected Gantry node / raft.ServerID.
+	if err := t.opts.Authenticator.VerifyPeer(context.Background(), expected, *hr.ServerAuth); err != nil {
+		_ = conn.Close()
+		return nil, fmt.Errorf("replication: peer authentication failed: %w", err)
+	}
+	return &peerConn{conn: conn, expected: expected}, nil
 }
 
 // serve accepts connections and hands each to serveConn.
@@ -386,20 +417,35 @@ func (t *NetTransport) serveConn(raw net.Conn) {
 		return
 	}
 	res, err := t.opts.Authenticator.Authenticate(context.Background(), req)
-	if err != nil {
-		res = AuthResult{Allowed: false, Reason: err.Error()}
+	hr := handshakeResponse{Result: AuthResult{Allowed: false, Reason: "authentication failed"}}
+	if err == nil && res.Allowed {
+		// Reciprocate: prove THIS node's Gantry identity to the dialer so
+		// authentication is mutual.
+		snonce, err := newNonce()
+		if err != nil {
+			return
+		}
+		sauth, err := buildHandshake(t.opts.ID, t.opts.ID, t.localAddr, t.opts.Protocol, t.opts.Capabilities, t.secret, snonce, time.Now())
+		if err != nil {
+			return
+		}
+		hr.Result = res
+		hr.ServerAuth = sauth
 	}
-	out, _ := json.Marshal(res)
+	out, _ := json.Marshal(hr)
 	if err := writeFrame(conn, frameAuthResp, out); err != nil {
 		return
 	}
-	if !res.Allowed {
+	if !hr.Result.Allowed {
 		return
 	}
 	authedNode := req.NodeID
 
-	// Server-side revalidation: terminate the connection if membership leaves
-	// the active state.
+	// Server-side revalidation: terminate the connection if the authenticated
+	// membership leaves active/replication-authorized state or the replication
+	// protocol becomes incompatible. Operation-schema capability version
+	// changes do NOT terminate the channel - they feed per-operation schema
+	// gating instead.
 	stop := make(chan struct{})
 	defer close(stop)
 	if t.opts.Membership != nil {
@@ -412,7 +458,7 @@ func (t *NetTransport) serveConn(raw net.Conn) {
 					return
 				case <-tk.C:
 					st, err := t.opts.Membership.Membership(context.Background(), authedNode)
-					if err != nil || st.State != MembershipActive {
+					if err != nil || st.State != MembershipActive || !st.ReplicationEnabled || st.Protocol != t.opts.Protocol {
 						_ = raw.Close()
 						return
 					}
@@ -517,7 +563,7 @@ func (t *NetTransport) revalidateLoop() {
 			t.mu.Unlock()
 			for _, tp := range list {
 				st, err := t.opts.Membership.Membership(context.Background(), tp.id)
-				if err != nil || st.State != MembershipActive {
+				if err != nil || st.State != MembershipActive || !st.ReplicationEnabled || st.Protocol != t.opts.Protocol {
 					t.dropConn(tp.addr, tp.pc)
 				}
 			}

@@ -45,6 +45,18 @@ PostgreSQL-backed deployments:
 - The storage implementation is **not part of the public replicated-operation
   contract.**
 
+### Persistence decision (CP7B-1 spike)
+
+Raft term/vote state, the replicated log and snapshot coordination are stored
+by a small bbolt-backed `raft.LogStore`/`raft.StableStore`
+(`replication/store.go`), kept physically and logically separate from any
+product database. The mature alternative normally paired with hashicorp/raft
+(hashicorp/raft-boltdb) uses the same bbolt engine; the store is owned so the
+persistence abstraction stays swappable. A SQLite-backed store (e.g.
+modernc.org/sqlite) was rejected: it would add a full SQL engine to a
+dependency-light core, and Raft persistence should not inherit a product
+database. bbolt is pure Go, cgo-free, mature and minimal.
+
 ## 2. Semantic operation boundary
 
 The replicated log contains **logical operations, never arbitrary SQL.** Frozen

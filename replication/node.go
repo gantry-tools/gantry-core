@@ -226,6 +226,26 @@ func (n *Node) LastIndex() uint64 { return n.raft.LastIndex() }
 // AppliedIndex returns the highest applied raft index and term.
 func (n *Node) AppliedIndex() (uint64, uint64) { return n.fsm.AppliedIndex() }
 
+// WaitApplied blocks until the local product FSM has applied at least index
+// (the commit index of a forwarded/observed operation) or the context is done,
+// so a follower only returns after its own applied state reflects the
+// operation. It is used for read-after-forward consistency.
+func (n *Node) WaitApplied(ctx context.Context, index uint64) error {
+	tick := time.NewTicker(10 * time.Millisecond)
+	defer tick.Stop()
+	for {
+		applied, _ := n.fsm.AppliedIndex()
+		if applied >= index {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-tick.C:
+		}
+	}
+}
+
 // Propose submits an operation to the leader. The acknowledgement contract is:
 //
 //	proposed != committed != responded

@@ -12,6 +12,11 @@ type Timing struct {
 	LeaderLeaseTimeout time.Duration
 	CommitTimeout      time.Duration
 	ProposeTimeout     time.Duration
+	// RevalidateEvery is the established-peer membership revalidation cadence
+	// (the NetTransport checks dialed/accepted peers and drops those that left
+	// active state). Production uses a short cadence so disable/revoke takes
+	// effect promptly; local tests may use a long cadence.
+	RevalidateEvery time.Duration
 }
 
 // LocalTestTiming returns the aggressive timing used by deterministic local
@@ -23,6 +28,7 @@ func LocalTestTiming() Timing {
 		LeaderLeaseTimeout: 250 * time.Millisecond,
 		CommitTimeout:      20 * time.Millisecond,
 		ProposeTimeout:     3 * time.Second,
+		RevalidateEvery:    time.Hour,
 	}
 }
 
@@ -38,5 +44,6 @@ func ProductionTiming() Timing {
 		LeaderLeaseTimeout: 750 * time.Millisecond,
 		CommitTimeout:      100 * time.Millisecond,
 		ProposeTimeout:     10 * time.Second,
+		RevalidateEvery:    30 * time.Second,
 	}
 }

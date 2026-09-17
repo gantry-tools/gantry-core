@@ -325,6 +325,19 @@ func (t *NetTransport) dropConn(target raft.ServerAddress, pc *peerConn) {
 // used. On TLS, the channel is encrypted; node identity is always bound by the
 // Gantry handshake in both directions.
 func (t *NetTransport) dial(ctx context.Context, target raft.ServerAddress, expected raft.ServerID) (*peerConn, error) {
+	// Revocation contract: this node does not send replication to a peer whose
+	// local membership view is not an active, replication-authorized, compatible
+	// participant. New connections to a disabled/revoked peer are refused here;
+	// established connections are revalidated (and dropped) by the periodic
+	// revalidation loop. Combined with the acceptor's membership check this
+	// makes disable/revoke directional in BOTH directions: the peer neither
+	// authenticates outward nor receives new committed state.
+	if t.opts.Membership != nil {
+		st, err := t.opts.Membership.Membership(ctx, expected)
+		if err != nil || st.State != MembershipActive || !st.ReplicationEnabled || st.Protocol != t.opts.Protocol {
+			return nil, fmt.Errorf("replication: peer %s is not an active replication member", expected)
+		}
+	}
 	raw, err := net.DialTimeout("tcp", string(target), t.opts.DialTimeout)
 	if err != nil {
 		return nil, err

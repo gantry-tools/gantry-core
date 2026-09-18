@@ -28,6 +28,53 @@ func TestIdentityFingerprintAndCompatibility(t *testing.T) {
 		t.Fatal("expected incompatibility")
 	}
 }
+func TestEndpointPolicyValidation(t *testing.T) {
+	base := testIdentity()
+	if err := base.ValidateEndpoint(true); err != nil {
+		t.Fatalf("https identity rejected in plaintext mode: %v", err)
+	}
+	if err := base.ValidateEndpoint(false); err != nil {
+		t.Fatalf("https identity rejected by default: %v", err)
+	}
+	httpID := base
+	httpID.PublicEndpoint = "http://node.test"
+	if err := httpID.ValidateEndpoint(false); err == nil {
+		t.Fatal("http endpoint accepted by default")
+	}
+	if err := httpID.ValidateEndpoint(true); err != nil {
+		t.Fatalf("http endpoint rejected in explicit plaintext mode: %v", err)
+	}
+	empty := base
+	empty.PublicEndpoint = ""
+	if err := empty.ValidateEndpoint(false); err != nil {
+		t.Fatalf("unconfigured endpoint rejected: %v", err)
+	}
+	ftp := base
+	ftp.PublicEndpoint = "ftp://node.test"
+	if err := ftp.ValidateEndpoint(true); err == nil {
+		t.Fatal("non-http scheme accepted in plaintext mode")
+	}
+}
+func TestValidateJoinSubmissionWithPolicy(t *testing.T) {
+	now := time.Now()
+	httpID := testIdentity()
+	httpID.PublicEndpoint = "http://node.test"
+	in := JoinSubmission{InvitationToken: "token", Identity: httpID, CredentialForHost: string(make([]byte, MinimumCredentialBytes))}
+	if err := ValidateJoinSubmission(in, now); err == nil {
+		t.Fatal("http-advertised join accepted by default")
+	}
+	if err := ValidateJoinSubmissionWithPolicy(in, now, true); err != nil {
+		t.Fatalf("http-advertised join rejected in explicit plaintext mode: %v", err)
+	}
+	if err := ValidateJoinSubmissionWithPolicy(in, now, false); err == nil {
+		t.Fatal("http-advertised join accepted by default via policy")
+	}
+	httpsID := testIdentity()
+	in.Identity = httpsID
+	if err := ValidateJoinSubmission(in, now); err != nil {
+		t.Fatalf("https-advertised join rejected by default: %v", err)
+	}
+}
 func TestPairingValidation(t *testing.T) {
 	now := time.Now()
 	inv := Invitation{State: PairingPending, ExpiresAt: now.Add(time.Minute)}

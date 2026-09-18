@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -53,19 +54,51 @@ func (i Identity) Fingerprint() string {
 }
 
 func (i Identity) Validate() error {
+	return i.ValidateEndpoint(false)
+}
+
+// ValidateEndpoint validates the identity, permitting an HTTP public endpoint
+// only when the operator has explicitly enabled plaintext transport for a
+// trusted private network. HTTPS remains the default. Plaintext disables TLS
+// confidentiality only; the identity authentication material is unchanged.
+func (i Identity) ValidateEndpoint(insecurePlaintext bool) error {
 	if strings.TrimSpace(i.NodeID) == "" || strings.TrimSpace(i.InstallationID) == "" {
 		return errors.New("cluster identity requires node and installation ids")
 	}
 	if i.ProtocolVersion <= 0 {
 		return errors.New("cluster identity requires protocol version")
 	}
-	if i.PublicEndpoint != "" && !strings.HasPrefix(i.PublicEndpoint, "https://") {
-		return errors.New("cluster public endpoint must use https")
+	if err := ValidatePublicEndpoint(i.PublicEndpoint, insecurePlaintext); err != nil {
+		return err
 	}
 	if i.PublicKey == "" {
 		return errors.New("cluster identity requires public key")
 	}
 	return nil
+}
+
+// ValidatePublicEndpoint permits HTTPS always; HTTP only when insecure
+// plaintext transport has been explicitly enabled for a trusted private
+// network. An empty endpoint is allowed (an unconfigured identity).
+func ValidatePublicEndpoint(endpoint string, insecurePlaintext bool) error {
+	if strings.TrimSpace(endpoint) == "" {
+		return nil
+	}
+	u, err := url.Parse(endpoint)
+	if err != nil || u.Host == "" {
+		return errors.New("invalid cluster public endpoint")
+	}
+	switch u.Scheme {
+	case "https":
+		return nil
+	case "http":
+		if insecurePlaintext {
+			return nil
+		}
+		return errors.New("cluster public endpoint must use https unless insecure plaintext transport is explicitly enabled")
+	default:
+		return errors.New("cluster public endpoint must use https")
+	}
 }
 
 type Member struct {

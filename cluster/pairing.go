@@ -65,14 +65,25 @@ type PairingResult struct {
 }
 
 func ValidateJoinSubmission(in JoinSubmission, now time.Time) error {
+	return ValidateJoinSubmissionWithPolicy(in, now, false)
+}
+
+// ValidateJoinSubmissionWithPolicy validates a join submission, permitting an
+// HTTP public endpoint only when the operator has explicitly enabled plaintext
+// transport for a trusted private network. HTTPS remains the default; plaintext
+// disables TLS confidentiality only, never the HMAC/capability/nonce checks.
+func ValidateJoinSubmissionWithPolicy(in JoinSubmission, now time.Time, insecurePlaintext bool) error {
 	if strings.TrimSpace(in.InvitationToken) == "" {
 		return errors.New("cluster invitation token required")
 	}
-	if err := in.Identity.Validate(); err != nil {
+	if err := in.Identity.ValidateEndpoint(insecurePlaintext); err != nil {
 		return err
 	}
-	if !strings.HasPrefix(in.Identity.PublicEndpoint, "https://") {
-		return errors.New("cluster public endpoint must use https")
+	if err := ValidatePublicEndpoint(in.Identity.PublicEndpoint, insecurePlaintext); err != nil {
+		return err
+	}
+	if strings.TrimSpace(in.Identity.PublicEndpoint) == "" {
+		return errors.New("cluster public endpoint required")
 	}
 	if len(in.CredentialForHost) < MinimumCredentialBytes {
 		return errors.New("cluster credential too short")

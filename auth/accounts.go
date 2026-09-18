@@ -96,6 +96,7 @@ func ValidateAccounts(users AccountsFile, roles RolesFile, policy AccountPolicy)
 	accountIDs := map[string]bool{}
 	identityIDs := map[string]bool{}
 	usernames := map[string]bool{}
+	emails := map[string]bool{}
 	providerSubjects := map[string]bool{}
 	passwordBackedAdmins := 0
 	for _, account := range users.Accounts {
@@ -132,6 +133,12 @@ func ValidateAccounts(users AccountsFile, roles RolesFile, policy AccountPolicy)
 					return fmt.Errorf("duplicate username %q", identity.Username)
 				}
 				usernames[username] = true
+				if email := strings.ToLower(strings.TrimSpace(identity.Email)); email != "" {
+					if emails[email] {
+						return fmt.Errorf("duplicate email %q", identity.Email)
+					}
+					emails[email] = true
+				}
 			case "email":
 				if strings.TrimSpace(identity.Email) == "" {
 					return fmt.Errorf("email identity %s has no email", identity.ID)

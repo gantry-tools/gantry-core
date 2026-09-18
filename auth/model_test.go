@@ -136,3 +136,32 @@ func TestPasswordVerifierAcceptsOnlyCanonicalWriterParameters(t *testing.T) {
 		}
 	}
 }
+
+func TestDuplicateEmailRejectedAcrossAccounts(t *testing.T) {
+	store := &memoryAccounts{
+		users: AccountsFile{Version: 1, Accounts: []Account{}},
+		roles: RolesFile{Version: 1, Roles: []Role{
+			{ID: "administrator", Name: "Administrator", Capabilities: []string{"*"}, BuiltIn: true},
+			{ID: "user", Name: "User", Capabilities: []string{"items.read"}, BuiltIn: true},
+		}},
+	}
+	model, err := NewModel(store, AccountPolicy{SchemaVersion: 1, ProductName: "Test", KnownCapability: func(key string) bool { return key == "items.read" }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := model.CreateInitialAdministrator("Admin", "admin", "admin@example.com", "password-one"); err != nil {
+		t.Fatal(err)
+	}
+	// Distinct username but the same (case-insensitive) email must be rejected.
+	if _, err := model.CreateAccount("Other", "other", "ADMIN@example.com", "password-two", []string{"user"}); err == nil {
+		t.Fatal("duplicate normalized email accepted")
+	}
+	// Distinct username and distinct email must be accepted.
+	if _, err := model.CreateAccount("Other", "other", "other@example.com", "password-two", []string{"user"}); err != nil {
+		t.Fatalf("distinct account rejected: %v", err)
+	}
+	// Duplicate username (case-insensitive) must be rejected.
+	if _, err := model.CreateAccount("Third", "ADMIN", "third@example.com", "password-three", []string{"user"}); err == nil {
+		t.Fatal("duplicate normalized username accepted")
+	}
+}
